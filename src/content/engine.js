@@ -1,17 +1,21 @@
-// Finds cookie banners and answers them with "accept all", within the limits the user agreed to:
-// only after the user's authorisation, never on excluded sites, never when a decision already
-// exists, and never once the user has started interacting with the page themselves.
+// Finds cookie banners and answers them the way the user chose ("Reject all" or "Accept all"), within
+// the limits the user agreed to: only after the user's authorisation, never on excluded sites, never
+// when a decision already exists, and never once the user has started interacting with the page.
 //
-// The background registers this script only while the user's consent is valid. For platforms with a
-// JavaScript API, the choice is recorded through that API; clicking the banner is the fallback.
+// With tracker warnings or blocking on it also observes: it tells the background when a site asks for
+// consent and which answer the user gave, so trackers can be put down to before consent or after a refusal.
+//
+// The background registers this script only while the user's consent is valid and automatic consent,
+// tracker warnings or blocking are on. For platforms with a JavaScript API, the choice is recorded through that
+// API; clicking the banner is the fallback.
 (() => {
   'use strict';
 
   const ext = globalThis.browser ?? globalThis.chrome;
-  const RULES = globalThis.KATLA_AUTOCONSENT_RULES;
-  const GENERIC = globalThis.KATLA_AUTOCONSENT_GENERIC;
-  if (!ext?.runtime?.id || !RULES || globalThis.__katlaAutoConsentEngine) return;
-  globalThis.__katlaAutoConsentEngine = true;
+  const RULES = globalThis.KATLA_BROWSERCONSENT_RULES;
+  const GENERIC = globalThis.KATLA_BROWSERCONSENT_GENERIC;
+  if (!ext?.runtime?.id || !RULES || globalThis.__katlaBrowserConsentEngine) return;
+  globalThis.__katlaBrowserConsentEngine = true;
 
   const isTop = window === window.top;
   const RUN_FOR_MS = isTop ? 30_000 : 15_000;
@@ -19,8 +23,10 @@
   const GENERIC_DELAY_MS = 2_000;
   const MAX_ACTIONS_PER_RULE = 3;
   const INPUT_EVENTS = ['pointerdown', 'keydown'];
+  const DECISIONS = { accept: 'accepted', reject: 'rejected' };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const send = (message) => ext.runtime.sendMessage(message).catch(() => null);
 
   // ---------------------------------------------------------------- DOM helpers
 
@@ -41,6 +47,15 @@
       for (const host of document.querySelectorAll(selector)) {
         const root = shadowRootOf(host);
         if (root) roots.push(root);
+      }
+    }
+    for (const selector of rule.frameHosts ?? []) {
+      for (const frame of document.querySelectorAll(selector)) {
+        try {
+          if (frame.contentDocument?.body) roots.push(frame.contentDocument);
+        } catch {
+          // Not same-origin after all.
+        }
       }
     }
     return roots;
@@ -74,7 +89,21 @@
     for (const el of queryAll(rule, selectors)) if (isVisible(el)) return el;
     return null;
   };
-  const isPrompting = (rule) => Boolean(firstVisible(rule, rule.banner ?? rule.accept));
+  const hasCookie = (name) => document.cookie.split(/;\s*/).some((cookie) => cookie.startsWith(`${name}=`));
+  // A visible banner, or a headless install whose consent cookie hasn't been set yet.
+  const isPrompting = (rule) =>
+    Boolean(firstVisible(rule, rule.banner ?? rule.accept)) ||
+    Boolean(rule.headless && !queryAll(rule, rule.headless).next().done && !hasCookie(rule.cookie.name));
+
+  // The control that gives this answer on the rule's banner. For "Reject all" without a known
+  // control, a button labelled that way inside the banner.
+  function controlFor(rule, answer) {
+    if (answer === 'accept') return firstVisible(rule, rule.accept);
+    const control = firstVisible(rule, rule.reject ?? []);
+    if (control) return control;
+    const banner = firstVisible(rule, rule.banner ?? rule.detect);
+    return banner ? GENERIC.buttonIn(banner, 'reject', isVisible) : null;
+  }
 
   async function waitUntil(predicate, timeoutMs) {
     const end = Date.now() + timeoutMs;
@@ -87,30 +116,42 @@
 
   // ---------------------------------------------------------------- engine
 
-  let stopped = false;
+  let acting = false;
+  let observing = false;
   let busy = false;
   let startedAt = 0;
   let genericAttempts = 0;
   let siteCheck = null;
+  let bannerReported = false;
+  let katlaReported = false;
   const cleanups = [];
   const progress = new Map();
 
-  function stop() {
-    if (stopped) return;
-    stopped = true;
+  const stopActing = () => {
+    acting = false;
+  };
+
+  function stopLooking() {
     for (const cleanup of cleanups.splice(0)) cleanup();
   }
 
-  // Authoritative check (policy version, pause, excluded sites), made once a banner is found.
-  // It goes through the background because an iframe cannot see the top-level site's address.
+  // Authoritative check (policy version, pause, excluded sites, how to answer), made once a banner
+  // is found. It goes through the background because an iframe cannot see the top-level site's address.
   function checkSite() {
-    siteCheck ??= ext.runtime.sendMessage({ type: 'content:check' }).catch(() => null);
+    siteCheck ??= send({ type: 'content:check' });
     return siteCheck;
   }
 
-  function report(rule, method) {
-    stop();
-    ext.runtime.sendMessage({ type: 'content:accepted', cmp: rule.id, cmpName: rule.name, method }).catch(() => {});
+  // `at` is when BrowserConsent acted, so trackers the answer sets off count as after it.
+  function report(rule, method, answer, at) {
+    stopActing();
+    send({ type: 'content:answered', cmp: rule.id, cmpName: rule.name, method, decision: DECISIONS[answer], at });
+  }
+
+  function reportBanner(cmp) {
+    if (!observing || bannerReported) return;
+    bannerReported = true;
+    send({ type: 'content:banner', cmp });
   }
 
   async function handle(rule) {
@@ -119,36 +160,39 @@
     if (Date.now() < state.nextTry) return;
 
     const site = await checkSite();
-    if (!site?.allowed) return stop();
+    if (!site?.allowed || !acting) return stopActing();
 
     // 1. The platform's own JavaScript API (run in the page by the background).
     if (rule.api) {
-      const { status } = (await ext.runtime.sendMessage({ type: 'content:platform-accept', cmp: rule.id }).catch(() => null)) ?? {};
-      if (stopped) return;
-      if (status === 'not-allowed') return stop();
+      const at = Date.now();
+      const { status } = (await send({ type: 'content:platform-answer', cmp: rule.id })) ?? {};
+      if (!acting) return;
+      if (status === 'not-allowed') return stopActing();
       if (status === 'already') {
         state.done = true;
         return;
       }
-      if (status === 'accepted') {
+      if (status === 'accepted' || status === 'rejected') {
         // Some platforms (Katla among them) record the choice but leave their banner on screen.
-        // Pressing the same "accept all" control closes it without changing the decision.
+        // Pressing the control for the same answer closes it without changing the decision.
+        const answer = status === 'accepted' ? 'accept' : 'reject';
         if (!(await waitUntil(() => !isPrompting(rule), 800))) {
-          firstVisible(rule, rule.accept)?.click();
+          controlFor(rule, answer)?.click();
           await waitUntil(() => !isPrompting(rule), 1_500);
         }
-        return report(rule, 'api');
+        return report(rule, 'api', answer, at);
       }
     }
 
-    // 2. Fallback: click the banner's "accept all" control.
-    const button = firstVisible(rule, rule.accept);
+    // 2. Fallback: click the banner's control for the answer.
+    const button = controlFor(rule, site.answer);
     if (button) {
       state.actions++;
+      const at = Date.now();
       button.click();
       // A consent iframe is usually removed right after the click, taking this script with it.
-      if (rule.frame === 'iframe') return report(rule, 'click');
-      if (await waitUntil(() => !isPrompting(rule), 3_000)) return report(rule, 'click');
+      if (rule.frame === 'iframe') return report(rule, 'click', site.answer, at);
+      if (await waitUntil(() => !isPrompting(rule), 3_000)) return report(rule, 'click', site.answer, at);
     }
     state.nextTry = Date.now() + 1_000;
     if (state.actions >= MAX_ACTIONS_PER_RULE) state.done = true;
@@ -157,34 +201,48 @@
   async function handleGeneric() {
     const found = GENERIC.find(isVisible);
     if (!found) return;
+    reportBanner('generic');
+    if (!acting) return;
     const site = await checkSite();
-    if (!site?.allowed) return stop();
-    if (!site.generic) {
+    if (!site?.allowed || !acting) return stopActing();
+    const button = found[site.answer];
+    if (!site.generic || !button) {
       genericAttempts = Infinity;
       return;
     }
     genericAttempts++;
-    found.button.click();
+    const at = Date.now();
+    button.click();
     if (await waitUntil(() => !isVisible(found.container), 3_000)) {
-      report({ id: 'generic', name: 'Unrecognised cookie banner' }, 'heuristic');
+      report({ id: 'generic', name: 'Unrecognised cookie banner' }, 'heuristic', site.answer, at);
     }
   }
 
   function tick() {
-    if (stopped || busy) return;
-    if (Date.now() - startedAt > RUN_FOR_MS) return stop();
+    if (busy) return;
+    const lookingForBanner = observing && !bannerReported;
+    if (Date.now() - startedAt > RUN_FOR_MS || !(acting || lookingForBanner)) return stopLooking();
 
     let knownPlatformPresent = false;
     let job = null;
     for (const rule of rules) {
-      if (progress.get(rule.id)?.done || !isPresent(rule)) continue;
+      if (!isPresent(rule)) continue;
       knownPlatformPresent = true;
-      if (rule.apiDecides || isPrompting(rule)) {
+      // For the Katla debug log, which the background only runs when the user switched it on.
+      if (rule.id === 'katla' && isTop && !katlaReported) {
+        katlaReported = true;
+        send({ type: 'content:katla-found' });
+      }
+      if (observing) watchShadowRoots(rule);
+      const prompting = isPrompting(rule);
+      if (prompting) reportBanner(rule.id);
+      if (acting && !progress.get(rule.id)?.done && (rule.apiDecides || prompting)) {
         job = () => handle(rule);
         break;
       }
     }
-    if (!job && isTop && !knownPlatformPresent && genericAttempts < 2 && Date.now() - startedAt > GENERIC_DELAY_MS) {
+    const genericWanted = (acting && genericAttempts < 2) || lookingForBanner;
+    if (!job && isTop && !knownPlatformPresent && genericWanted && Date.now() - startedAt > GENERIC_DELAY_MS) {
       job = handleGeneric;
     }
     if (!job) return;
@@ -200,6 +258,48 @@
     isTop ? rule.frame !== 'iframe' : rule.frame === 'iframe' && (!rule.url || rule.url.test(location.href)),
   );
 
+  // ---------------------------------------------------------------- the user's own answers
+
+  // Which answer a click on a banner control gave, from the platform rules or, in the top frame, by label.
+  function decisionFor(target) {
+    for (const rule of rules) {
+      for (const [answer, selectors] of [['reject', rule.reject ?? []], ['accept', rule.accept]]) {
+        for (const selector of selectors) {
+          try {
+            if (target.closest(selector)) return { cmp: rule.id, decision: DECISIONS[answer] };
+          } catch {
+            // Unsupported selector in this browser; skip it.
+          }
+        }
+      }
+    }
+    const answer = isTop ? GENERIC.answerOf(target) : null;
+    return answer ? { cmp: 'generic', decision: DECISIONS[answer] } : null;
+  }
+
+  // A click inside a shadow root reaches the document listener first, retargeted to the shadow host,
+  // so an event only counts as handled once a decision has been found in it.
+  const handledClicks = new WeakSet();
+  function onUserClick(event) {
+    if (!event.isTrusted || handledClicks.has(event)) return;
+    const [target] = event.composedPath();
+    const found = target instanceof Element ? decisionFor(target) : null;
+    if (!found) return;
+    handledClicks.add(event);
+    send({ type: 'content:decision', ...found, at: Date.now() });
+  }
+
+  // Clicks inside closed shadow roots only reach listeners on the root itself, and clicks inside a frame
+  // never reach this document.
+  const watchedRoots = new WeakSet();
+  function watchShadowRoots(rule) {
+    for (const root of rootsFor(rule).slice(1)) {
+      if (watchedRoots.has(root)) continue;
+      watchedRoots.add(root);
+      root.addEventListener('click', onUserClick, true);
+    }
+  }
+
   async function start() {
     if (!rules.length && !isTop) return;
     let stored;
@@ -209,20 +309,28 @@
       return;
     }
     // Cheap early exit; the background re-checks everything before any action.
-    if (stored.consent?.status !== 'granted' || stored.settings?.enabled === false || stopped) return;
+    if (stored.consent?.status !== 'granted') return;
+    acting = stored.settings?.enabled !== false;
+    observing = Boolean(stored.settings?.warnBeforeConsent || stored.settings?.warnAfterReject || stored.settings?.blockTrackers);
+    if (!acting && !observing) return;
 
     startedAt = Date.now();
 
-    // The moment the user clicks or types on the page, the decision is theirs. The listener
-    // outlives the engine so that a consent iframe the user opens later (for example from a
-    // "Privacy settings" link) is left alone too.
-    const onUserInput = (event) => {
-      if (!event.isTrusted) return;
-      stop();
-      for (const type of INPUT_EVENTS) window.removeEventListener(type, onUserInput, true);
-      ext.runtime.sendMessage({ type: 'content:user-input' }).catch(() => {});
-    };
-    for (const type of INPUT_EVENTS) window.addEventListener(type, onUserInput, true);
+    if (acting) {
+      // The moment the user clicks or types on the page, the decision is theirs. The listener
+      // outlives the engine so that a consent iframe the user opens later (for example from a
+      // "Privacy settings" link) is left alone too.
+      const onUserInput = (event) => {
+        if (!event.isTrusted) return;
+        stopActing();
+        for (const type of INPUT_EVENTS) window.removeEventListener(type, onUserInput, true);
+        send({ type: 'content:user-input' });
+      };
+      for (const type of INPUT_EVENTS) window.addEventListener(type, onUserInput, true);
+    }
+
+    // For as long as the page is open, since the user may answer the banner at any time.
+    if (observing) document.addEventListener('click', onUserClick, true);
 
     if (isTop) {
       let scheduled = false;

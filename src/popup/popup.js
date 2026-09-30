@@ -1,9 +1,21 @@
 import { ext } from '../lib/browser.js';
 import { clearSiteData, hostFromUrl, isExcluded, normalizeHost } from '../lib/site.js';
-import { getState, isAuthorised, setSiteExcluded, updateSettings } from '../lib/storage.js';
+import { decisionOnFile } from '../lib/on-file.js';
+import {
+  answerFor,
+  getState,
+  isAuthorised,
+  setAnswer,
+  setSiteExcluded,
+  siteRecordFor,
+  trackersWatched,
+  updateSettings,
+  warningsOn,
+} from '../lib/storage.js';
+import { warningsFor } from '../lib/warnings.js';
 
 const $ = (id) => document.getElementById(id);
-const platformName = new Map(globalThis.KATLA_AUTOCONSENT_RULES.map((rule) => [rule.id, rule.name]));
+const platformName = new Map(globalThis.KATLA_BROWSERCONSENT_RULES.map((rule) => [rule.id, rule.name]));
 
 const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
 const host = hostFromUrl(tab?.url ?? '');
@@ -17,11 +29,41 @@ $('activate').addEventListener('click', () => openPage('onboarding/onboarding.ht
 $('open-settings').addEventListener('click', () => openPage('options/options.html'));
 $('open-privacy').addEventListener('click', () => openPage('options/options.html#privacy'));
 
+function statusText(authorised, settings, answer) {
+  if (!authorised) return 'Not active';
+  if (!settings.enabled) return 'Auto consent off';
+  return answer === 'accept' ? 'Accept all' : 'Reject all';
+}
+
+const ON_FILE = {
+  accepted: 'Already accepted',
+  rejected: 'Already rejected',
+  custom: 'Custom choice on file',
+  answered: 'Already answered',
+};
+
+function renderWarnings(list, entries) {
+  list.replaceChildren(
+    ...entries.map(({ tracker, cookies, pixels, earlier }) => {
+      const item = document.createElement('li');
+      const name = document.createElement('strong');
+      name.textContent = tracker.name;
+      const detail = document.createElement('span');
+      detail.className = 'muted';
+      detail.textContent = [...cookies, ...pixels].join(', ') + (earlier ? ' · on an earlier visit' : '');
+      item.append(name, detail);
+      return item;
+    }),
+  );
+  list.parentElement.hidden = entries.length === 0;
+}
+
 async function render() {
   const { consent, settings, exceptions } = await getState();
   const authorised = isAuthorised(consent);
+  const answer = answerFor(consent, settings);
   const status = $('status');
-  status.textContent = !authorised ? 'Not active' : settings.enabled ? 'Active' : 'Paused';
+  status.textContent = statusText(authorised, settings, answer);
   status.className = `status-pill ${authorised && settings.enabled ? 'on' : ''}`;
 
   $('inactive').hidden = authorised;
@@ -30,12 +72,19 @@ async function render() {
   if (!authorised) return;
 
   $('enabled').checked = settings.enabled;
-  $('enabled-hint').textContent = settings.enabled ? 'On every site you haven’t excluded' : 'Paused everywhere';
+  $('enabled-hint').textContent = !settings.enabled
+    ? 'Off everywhere'
+    : answer === 'accept'
+      ? 'Accepts all cookies on every site you haven’t excluded'
+      : 'Rejects all cookies on every site you haven’t excluded';
+  $('answer').hidden = !settings.enabled;
+  for (const input of document.querySelectorAll('input[name="answer"]')) input.checked = input.value === answer;
 
   $('site-host').textContent = site ?? 'This page';
   $('site-controls').hidden = !site;
+  $('warnings').hidden = true;
   if (!site) {
-    $('site-state').textContent = 'AutoConsent only works on websites.';
+    $('site-state').textContent = 'BrowserConsent only works on websites.';
     return;
   }
   for (const el of document.querySelectorAll('.host-inline')) el.textContent = site;
@@ -44,24 +93,46 @@ async function render() {
   $('site-enabled').checked = !excluded;
   $('site-enabled').disabled = !settings.enabled;
 
-  const key = `tab:${tab.id}`;
-  const { [key]: answered = [] } = await ext.storage.session.get(key);
+  const key = `page:${tab.id}`;
+  const { [key]: page } = await ext.storage.session.get(key);
+  const answered = page?.decisions.findLast((d) => d.by === 'browserconsent');
+  const onFile = answered ? null : await decisionOnFile(tab.url);
   const state = $('site-state');
-  state.classList.toggle('ok', answered.length > 0);
-  if (answered.length > 0) {
-    const last = answered.at(-1);
-    state.textContent = `Accepted all on this page · ${last.cmpName}`;
+  state.classList.toggle('ok', Boolean(answered || onFile));
+  if (answered) {
+    state.textContent = `${answered.decision === 'rejected' ? 'Rejected' : 'Accepted'} all on this page · ${answered.cmpName}`;
+  } else if (onFile) {
+    state.textContent = `${ON_FILE[onFile.decision]} · ${onFile.cmpName}`;
   } else if (!settings.enabled) {
-    state.textContent = 'Paused';
+    state.textContent = 'Auto consent is off';
   } else if (excluded) {
     state.textContent = 'Off for this site';
   } else {
     state.textContent = 'No cookie banner answered on this page';
   }
+
+  if (trackersWatched(settings)) {
+    const { siteFindings = {} } = await ext.storage.local.get('siteFindings');
+    const { beforeConsent, afterReject, count, blocked } = warningsFor(page, settings, siteRecordFor(site, siteFindings));
+    renderWarnings($('warnings-before-list'), beforeConsent);
+    renderWarnings($('warnings-after-list'), afterReject);
+    renderWarnings($('blocked-list'), blocked);
+    $('warnings-none').hidden = count > 0 || blocked.length > 0 || !warningsOn(settings);
+    $('warnings').hidden = false;
+  }
 }
 
 $('enabled').addEventListener('change', async (event) => {
   await updateSettings({ enabled: event.target.checked });
+  render();
+});
+
+// "Accept all" needs the user's consent to it first, which onboarding asks for.
+$('answer').addEventListener('change', async (event) => {
+  if (!(await setAnswer(event.target.value))) {
+    openPage('onboarding/onboarding.html?answer=accept');
+    return;
+  }
   render();
 });
 
@@ -112,11 +183,11 @@ $('withdraw').addEventListener('click', async () => {
   });
   await render();
   if (withdrawn.length) {
-    showResult(`Refusal recorded with ${names}. AutoConsent is off for this site. Reloading the page…`);
+    showResult(`Refusal recorded with ${names}. BrowserConsent is off for this site. Reloading the page…`);
     setTimeout(() => ext.tabs.reload(tab.id), 900);
   } else {
     showResult(
-      'AutoConsent is now off for this site, but it couldn’t reach the site’s consent platform. To reset the consent already given, delete this site’s cookies.',
+      'BrowserConsent is now off for this site, but it couldn’t reach the site’s consent platform. To reset the consent already given, delete this site’s cookies.',
     );
   }
 });
@@ -131,7 +202,7 @@ $('clear').addEventListener('click', async () => {
   }
   await logUserAction({ action: 'site-data-cleared', method: 'user' });
   await render();
-  showResult('Cookies deleted and AutoConsent is off for this site. Reloading the page…');
+  showResult('Cookies deleted and BrowserConsent is off for this site. Reloading the page…');
   setTimeout(() => ext.tabs.reload(tab.id), 900);
 });
 

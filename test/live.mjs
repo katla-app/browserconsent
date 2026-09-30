@@ -1,5 +1,5 @@
 // Live smoke test: visits real websites that use each major consent platform and reports whether
-// AutoConsent answered their banner. Results depend on your location (banners are often only shown
+// BrowserConsent answered their banner. Results depend on your location (banners are often only shown
 // in the EU/EEA), bot protection and site changes, so treat it as a selector health check.
 //
 //   node test/live.mjs [--firefox] [site ...]
@@ -38,7 +38,7 @@ const SITES = [
 
 const sandbox = vm.createContext({});
 vm.runInContext(readFileSync(new URL('../src/content/rules.js', import.meta.url), 'utf8'), sandbox);
-const ruleSelectors = sandbox.KATLA_AUTOCONSENT_RULES.map((r) => ({ name: r.name, selectors: r.banner ?? r.accept }));
+const ruleSelectors = sandbox.KATLA_BROWSERCONSENT_RULES.map((r) => ({ name: r.name, selectors: r.banner ?? r.accept }));
 
 const { browser, onboarding } = await launchWithExtension(target);
 await activate(onboarding);

@@ -74,7 +74,7 @@ export async function launchWithExtension(target) {
     if (!onboarding) await new Promise((r) => setTimeout(r, 250));
   }
   if (!onboarding) throw new Error('The extension did not open its onboarding page after install');
-  await onboarding.waitForSelector('#statements .statement');
+  await onboarding.waitForSelector('#answer-accept');
   return { browser, executablePath, onboarding };
 }
 
@@ -106,9 +106,10 @@ export async function openSettingsFromOnboarding(page) {
   return page;
 }
 
-// Ticks every statement and activates, exactly as a user would.
+// Chooses "Accept all", ticks every statement and activates, exactly as a user would.
 export async function activate(onboarding) {
   await bringToFront(onboarding);
+  await click(onboarding, '#answer-accept');
   const count = await onboarding.$$eval('#statements .statement input', (inputs) => inputs.length);
   for (let i = 1; i <= count; i++) await click(onboarding, `#statements .statement:nth-child(${i}) input`);
   await click(onboarding, '#activate');

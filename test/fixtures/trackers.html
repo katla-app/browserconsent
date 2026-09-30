@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>Tracker fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>OneTrust banner (no API) on a site whose trackers don't wait for consent</h1>
+<div id="onetrust-consent-sdk">
+  <div id="onetrust-banner-sdk" class="banner">
+    We use cookies.
+    <button id="onetrust-reject-all-handler">Reject all</button>
+    <button id="onetrust-accept-btn-handler">Accept all cookies</button>
+  </div>
+</div>
+<script>
+  // Like a site that loads its tags before asking: a Google Analytics cookie and an Adobe Analytics hit
+  // (/b/ss/ counts on any host, so the test server can take it) before anyone has answered, and another
+  // hit once they have, whatever the answer.
+  const hit = (label) => fetch(`/b/ss/fixture/${label}?t=${Date.now()}`, { cache: 'no-store' }).catch(() => {});
+  document.cookie = `_ga=GA1.1.${Date.now()}.1; path=/`;
+  hit('load');
+
+  // Once answered the banner stays away, like a consent platform that remembers the choice.
+  const stored = `decision:${new URLSearchParams(location.search).get('run')}`;
+  if (localStorage.getItem(stored)) hide('#onetrust-consent-sdk');
+  const answer = (decision) => {
+    record(`trackers:${decision}`);
+    localStorage.setItem(stored, decision);
+    hide('#onetrust-banner-sdk');
+    setTimeout(() => hit('after').then(() => record('trackers:tracked-after')), 300);
+  };
+  document.getElementById('onetrust-accept-btn-handler').onclick = () => answer('accept');
+  document.getElementById('onetrust-reject-all-handler').onclick = () => answer('reject');
+</script>

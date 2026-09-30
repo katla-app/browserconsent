@@ -11,9 +11,12 @@ export function hostFromUrl(url) {
 
 export const normalizeHost = (host) => host.trim().toLowerCase().replace(/\.$/, '').replace(/^www\./, '');
 
+// The host is the domain itself or one of its subdomains.
+export const onDomain = (host, domain) => host === domain || host.endsWith(`.${domain}`);
+
 export function isExcluded(host, exceptions) {
   const h = normalizeHost(host);
-  return exceptions.some((ex) => h === ex || h.endsWith(`.${ex}`));
+  return exceptions.some((ex) => onDomain(h, ex));
 }
 
 // Best-effort registrable domain without a public suffix list: good enough to widen a

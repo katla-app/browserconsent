@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><title>Cookie Tractor fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Cookie Tractor (markup mirrors government.se; ?custom has a category ticked, so its second button saves a custom selection)</h1>
+<script>
+  document.cookie = '_cc_cookieConsent=; max-age=0; path=/';
+  const custom = location.search.includes('custom');
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="CookieConsent">
+      <dialog class="cookie-popup" open aria-labelledby="cc-label" style="position:fixed;bottom:0;margin:0 auto">
+        <h1 id="cc-label">Cookie settings</h1>
+        <div id="cc-description"><p>Government.se save information on your device to make the website work.</p></div>
+        <div class="actions">
+          <div><button id="cc-b-acceptall" class="accentuated">Accept all</button></div>
+          <div><button id="cc-b-custom" data-t-necessary="Only necessary" data-t-choice="Custom selection">${custom ? 'Custom selection' : 'Only necessary'}</button></div>
+        </div>
+      </dialog>
+    </div>`);
+  document.documentElement.classList.add('cc-active');
+  const save = (consents, what) => {
+    record(what);
+    const value = { user: 'fixture', consents, availableConsents: ['undefined', 'necessary', 'statistical'], utc: Date.now() };
+    document.cookie = `_cc_cookieConsent=${encodeURI(JSON.stringify(value))}; path=/`;
+    document.getElementById('CookieConsent').remove();
+    document.documentElement.classList.remove('cc-active');
+  };
+  document.getElementById('cc-b-acceptall').onclick = () => save(['undefined', 'necessary', 'statistical'], 'ct:accept');
+  document.getElementById('cc-b-custom').onclick = () => save(['necessary', 'undefined'], custom ? 'ct:custom' : 'ct:necessary');
+</script>

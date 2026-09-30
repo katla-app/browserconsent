@@ -1,0 +1,41 @@
+<!doctype html><meta charset="utf-8"><title>Katla SDK fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Katla through its SDK: the site's own banner markup, and the guard injected after hydration (?keep keeps an earlier answer)</h1>
+<script>
+  if (!location.search.includes('keep')) document.cookie = '_katla_consent=; max-age=0; path=/';
+  const hasCookie = () => /(?:^|;\s*)_katla_consent=/.test(document.cookie);
+
+  // The site's own banner, as built with the SDK's hooks: no katla-* classes.
+  function showBanner() {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="fixed inset-x-0 bottom-0 z-50 border-t bg-card" style="position:fixed;left:0;right:0;bottom:0;padding:24px;background:#fff">
+        <h2>Denna webbplats använder cookies</h2>
+        <button class="rounded bg-primary">Tillåt alla</button>
+        <button class="rounded border">Avvisa</button>
+      </div>`);
+  }
+
+  // Like the SDK, the guard is injected after hydration.
+  setTimeout(() => {
+    const guard = document.createElement('script');
+    guard.id = 'katla-guard-script';
+    guard.textContent = `(() => {
+      const listeners = [];
+      const write = (value) => {
+        document.cookie = '_katla_consent=' + encodeURIComponent(value + '|fixture|' + Date.now()) + '; path=/';
+        listeners.forEach((fn) => fn({ type: value === 'all' ? 'all' : 'rejected' }));
+      };
+      window.KatlaConsent = {
+        hasConsent: () => /(?:^|;\\s*)_katla_consent=/.test(document.cookie),
+        acceptAll() { record('katla-sdk:accept-api'); write('all'); },
+        rejectAll() { record('katla-sdk:reject-api'); write('functional'); },
+        withdrawConsent() { record('katla-sdk:withdraw'); write('functional'); },
+        getRegulation: () => 'gdpr',
+        subscribe: (fn) => listeners.push(fn),
+        siteId: 'fixture', version: '3', mode: 'headless',
+      };
+    })();`;
+    document.head.appendChild(guard);
+    if (!hasCookie()) showBanner();
+    window.KatlaConsent.subscribe(() => document.querySelector('.fixed')?.remove());
+  }, 500);
+</script>

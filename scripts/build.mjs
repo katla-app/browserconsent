@@ -12,19 +12,20 @@ const matches = ['http://*/*', 'https://*/*'];
 const base = {
   manifest_version: 3,
   name: pkg.displayName,
-  short_name: 'Katla AutoConsent',
+  short_name: 'Katla BrowserConsent',
   version: pkg.version,
   description: pkg.description,
   homepage_url: 'https://katla.app',
   icons,
   action: {
-    default_title: 'Katla AutoConsent',
+    default_title: 'Katla BrowserConsent',
     default_popup: 'popup/popup.html',
     default_icon: { 16: icons[16], 32: icons[32], 48: icons[48] },
   },
   options_ui: { page: 'options/options.html', open_in_tab: true },
   // No static content scripts: background.js registers them only once the user has consented.
-  permissions: ['storage', 'scripting', 'browsingData'],
+  // webRequest and cookies are for tracker warnings; their listeners are only kept while those are on.
+  permissions: ['storage', 'scripting', 'browsingData', 'webRequest', 'cookies', 'declarativeNetRequest'],
   host_permissions: matches,
 };
 
@@ -61,7 +62,7 @@ for (const [name, manifest] of Object.entries(targets)) {
   cpSync(`${root}/src`, out, { recursive: true, filter: (path) => !path.endsWith('.DS_Store') });
   writeFileSync(`${out}/manifest.json`, `${JSON.stringify(manifest, null, 2)}\n`);
 
-  const zip = `${root}/dist/katla-autoconsent-${name}-${pkg.version}.zip`;
+  const zip = `${root}/dist/katla-browserconsent-${name}-${pkg.version}.zip`;
   rmSync(zip, { force: true });
   if (existsSync('/usr/bin/zip')) {
     execFileSync('zip', ['-qrX', zip, '.'], { cwd: out });

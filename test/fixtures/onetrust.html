@@ -14,7 +14,7 @@
   let closed = false;
   window.OneTrust = {
     AllowAll() { record('onetrust:api'); closed = true; hide('#onetrust-banner-sdk'); },
-    RejectAll() { record('onetrust:withdraw'); },
+    RejectAll() { record('onetrust:reject-api'); closed = true; hide('#onetrust-banner-sdk'); },
     IsAlertBoxClosed: () => closed,
   };
 </script>

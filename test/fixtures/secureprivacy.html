@@ -1,0 +1,38 @@
+<!doctype html><meta charset="utf-8"><title>Secure Privacy fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Secure Privacy: a dialog holding a srcdoc iframe with the buttons (markup mirrors digip.com; ?noapi without window.sp)</h1>
+<!-- Like the live banner, the dialog itself has no size; the iframe is what shows. -->
+<dialog id="main-cookie-banner" style="width:0;height:0;padding:0;border:0;overflow:visible">
+  <iframe id="ifrmCookieBanner" title="Cookie Banner" srcdoc="<!DOCTYPE html><html><head></head><body></body></html>" style="position:fixed;left:40px;bottom:40px;border:none;width:760px;height:220px;background:#fff"></iframe>
+</dialog>
+<script>
+  const dialog = document.getElementById('main-cookie-banner');
+  const frame = document.getElementById('ifrmCookieBanner');
+  let consent = null;
+  const save = (action) => {
+    consent = action;
+    record(action === 'acceptAll' ? 'sp:accept' : 'sp:decline');
+    dialog.close();
+  };
+  if (!location.search.includes('noapi')) {
+    window.sp = {
+      hasConsent: () => consent !== null,
+      async saveAllConsents(action) {
+        record(action === 'acceptAll' ? 'sp:api-accept' : 'sp:api-decline');
+        save(action);
+      },
+    };
+  }
+  // Like the real script, the banner is built into the iframe's document once it has loaded.
+  frame.addEventListener('load', () => {
+    frame.contentDocument.body.innerHTML = `
+      <div id="banner-0" class="frame-content">
+        <p>We use cookies on this site to enhance your user experience.</p>
+        <button id="sp-accept" class="btn"><span>Accept all</span></button>
+        <button id="sp-decline" class="btn">Decline</button>
+        <button id="sp-customize" class="btn">Customize</button>
+      </div>`;
+    frame.contentDocument.getElementById('sp-accept').onclick = () => save('acceptAll');
+    frame.contentDocument.getElementById('sp-decline').onclick = () => save('declineAll');
+    dialog.show();
+  });
+</script>

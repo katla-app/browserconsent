@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><title>CookieConsent v2 fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>vanilla-cookieconsent v2 (markup mirrors v2.3 as built into Quickbutik; ?necessary mirrors v2.9 with "Reject all" on its first screen)</h1>
+<style>
+  #cm { position: fixed; left: 16px; bottom: 16px; max-width: 420px; padding: 24px; background: #fff; border: 1px solid #ddd; }
+  html.show--consent #cc_div #cm { visibility: visible !important; }
+</style>
+<script>
+  const necessary = location.search.includes('necessary');
+  const [primaryId, secondaryId] = necessary ? ['c-p-bn', 'c-s-bn'] : ['cm_primary_btn', 'cm_secondary_btn'];
+  const markup = `
+    <div id="cc_div">
+      <div id="cm" role="dialog" aria-modal="true" aria-hidden="false" aria-labelledby="cm_title" style="visibility: hidden">
+        <div id="cm_inner">
+          <div id="cm_title" role="heading" aria-level="2">Vi använder cookies</div>
+          <div id="cm_text">Butiken använder cookies för statistik och marknadsföring.</div>
+          <div id="cm_btns">
+            <button type="button" id="${primaryId}" class="c_button">Godkänn alla</button>
+            <button type="button" id="${secondaryId}" class="c_button c_link">${necessary ? 'Endast nödvändiga' : 'Inställningar'}</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', necessary ? `<div id="cc--main">${markup}</div>` : markup);
+  const hideBanner = () => { document.documentElement.classList.remove('show--consent'); document.getElementById('cm').setAttribute('aria-hidden', 'true'); };
+  document.getElementById(primaryId).onclick = () => { record('cc2:accept'); hideBanner(); };
+  document.getElementById(secondaryId).onclick = () => { record(necessary ? 'cc2:necessary' : 'cc2:settings'); if (necessary) hideBanner(); };
+  setTimeout(() => document.documentElement.classList.add('show--consent'), 300);
+</script>

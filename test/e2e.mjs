@@ -66,6 +66,17 @@ async function expectNothing(page, waitMs = 4_000) {
 let control;
 const storage = (method, arg) => storageCall(control, method, arg);
 
+const tabIdOf = (page) =>
+  control.evaluate(async (url) => (await (globalThis.browser ?? globalThis.chrome).tabs.query({})).find((t) => t.url === url)?.id, page.url());
+
+async function pageRecord(page) {
+  const key = `page:${await tabIdOf(page)}`;
+  return (await control.evaluate((k) => (globalThis.browser ?? globalThis.chrome).storage.session.get(k), key))[key];
+}
+
+const badgeOf = async (page) =>
+  control.evaluate((tabId) => (globalThis.browser ?? globalThis.chrome).action.getBadgeText({ tabId }), await tabIdOf(page));
+
 const registeredScripts = (page) =>
   page.evaluate(async () => (await (globalThis.browser ?? globalThis.chrome).scripting.getRegisteredContentScripts()).map((s) => s.id));
 
@@ -96,13 +107,19 @@ await test('does nothing before the user consents', async () => {
   await expectNothing(await open(fixture('onetrust.html')), 3_500);
 });
 
-await test('activation needs every statement ticked', async () => {
+await test('activation needs an answer and every statement for it ticked', async () => {
   await bringToFront(onboarding);
   const statement = (n) => `#statements .statement:nth-child(${n}) input`;
-  const count = await onboarding.$$eval('#statements .statement input', (inputs) => inputs.length);
-  assert(count === 3, `Expected 3 statements, found ${count}`);
+  const count = () => onboarding.$$eval('#statements .statement input', (inputs) => inputs.length);
   assert(await onboarding.$eval('#activate', (b) => b.disabled), 'Activate should start disabled');
   assert(!(await onboarding.$eval('#generic', (i) => i.checked)), 'Unrecognised banners must be off by default');
+  assert(await onboarding.$eval('#statements-step', (el) => el.hidden), 'No statements before an answer is chosen');
+  await click(onboarding, '#answer-reject');
+  assert((await count()) === 2, `Expected 2 statements for Reject all, found ${await count()}`);
+  await click(onboarding, statement(1));
+  await click(onboarding, '#answer-accept');
+  assert((await count()) === 3, `Expected 3 statements for Accept all, found ${await count()}`);
+  assert(!(await onboarding.$eval(statement(1), (i) => i.checked)), 'Statements start unticked after switching');
   await click(onboarding, statement(1));
   await click(onboarding, statement(2));
   assert(await onboarding.$eval('#activate', (b) => b.disabled), 'Activate should stay disabled with 2 of 3 ticked');
@@ -120,10 +137,12 @@ await test('consent receipt is stored with the exact wording', async () => {
   assert(consent?.status === 'granted', 'consent.status should be granted');
   assert(/^[0-9a-f-]{36}$/.test(consent.receiptId), 'receiptId should be a UUID');
   assert(consent.statements.length === 3 && consent.statements.every((s) => s.text.length > 20), 'statements stored verbatim');
-  assert(consent.noticeText.includes('What AutoConsent does'), 'notice text stored');
+  assert(consent.noticeText.includes('What BrowserConsent does'), 'notice text stored');
   assert(/^sha256:[0-9a-f]{64}$/.test(consent.noticeHash), 'notice hash stored');
   assert(consentHistory.length === 1 && consentHistory[0].type === 'granted', 'history has the grant');
   assert(settings.enabled === true && settings.generic === false, 'settings default to enabled, generic off');
+  assert(settings.answer === 'accept' && consent.scope.answer === 'accept', 'the chosen answer is in settings and receipt');
+  assert(settings.warnBeforeConsent && settings.warnAfterReject, 'tracker warnings are on by default');
 });
 
 await test('OneTrust: accepts through its JavaScript API', async () => {
@@ -143,6 +162,24 @@ await test('Cookiebot without an API: clicks, even when the banner appears late'
   assert(r.length === 1, `Expected a single action, got ${JSON.stringify(r)}`);
 });
 
+await test('CookieConsent v2 (Quickbutik): accepts with the primary button', async () => {
+  const r = await waitForResult(await open(fixture('cookieconsent-v2.html')), 'cc2:accept');
+  assert(!r.includes('cc2:settings'), 'must not open the settings');
+});
+
+await test('Secure Privacy: accepts through its JavaScript API', async () => {
+  const r = await waitForResult(await open(fixture('secureprivacy.html')), 'sp:api-accept');
+  assert(!r.includes('sp:decline'), `must not decline: ${JSON.stringify(r)}`);
+});
+
+await test('Secure Privacy without an API: clicks inside its srcdoc iframe', async () => {
+  await waitForResult(await open(fixture('secureprivacy.html?noapi')), 'sp:accept');
+});
+
+await test('Cookie Tractor: accepts with its button', async () => {
+  await waitForResult(await open(fixture('cookietractor.html')), 'ct:accept');
+});
+
 await test('Didomi: falls back to the platform API', async () => {
   await waitForResult(await open(fixture('didomi-api.html')), 'didomi:api');
 });
@@ -158,7 +195,7 @@ await test('Usercentrics without an API: clicks inside a closed shadow root', as
 await test('Katla: accepts through KatlaConsent.acceptAll(), then closes the widget', async () => {
   const page = await open(fixture('katla-gdpr.html'));
   await waitForResult(page, 'katla:api');
-  // Like the live widget, the fixture stays open after acceptAll(), so AutoConsent closes it.
+  // Like the live widget, the fixture stays open after acceptAll(), so BrowserConsent closes it.
   await page.waitForFunction(() => !document.querySelector('.katla-widget:not(.katla-hidden) .katla-consent-box'), { timeout: 4_000 });
   const r = await results(page);
   assert(r[0] === 'katla:api' && !r.includes('katla:reject'), `API must come first, got ${JSON.stringify(r)}`);
@@ -177,6 +214,21 @@ await test('Katla: redesigned CCPA widget, never clicks "Do Not Sell" or "Close"
   await sleep(1_500);
   const r = await results(page);
   assert(!r.includes('katla:opt-out') && !r.includes('katla:close-refuses'), `clicked a refusal: ${JSON.stringify(r)}`);
+});
+
+await test('Katla SDK: the site\'s own banner, accepted through the API', async () => {
+  const page = await open(fixture('katla-sdk.html'));
+  await waitForResult(page, 'katla-sdk:accept-api');
+  await page.waitForFunction(() => !document.querySelector('.fixed'), { timeout: 3_000 });
+  assert((await page.evaluate(() => document.cookie)).includes('_katla_consent=all'), 'consent cookie written');
+  const { log } = await storage('get', 'log');
+  assert(log[0]?.cmp === 'katla' && log[0].method === 'api', `logged through the API: ${JSON.stringify(log[0])}`);
+});
+
+await test('Katla SDK: leaves a decision already on file alone, and shows it as answered', async () => {
+  const page = await open(fixture('katla-sdk.html?keep'));
+  await expectNothing(page, 2_500);
+  assert((await badgeOf(page)) === '✓', `the decision on file earns the tick, got ${await badgeOf(page)}`);
 });
 
 await test('Sourcepoint: cross-origin consent iframe', async () => {
@@ -213,7 +265,7 @@ await test('A site cannot use the extension to accept on its own behalf', async 
   const page = await open(fixture('onetrust.html', 'localhost'));
   // Even if a page imitates the content script's request, the background re-checks the site.
   const response = await page.evaluate(() => {
-    document.dispatchEvent(new CustomEvent('katla-autoconsent:request', { detail: JSON.stringify({ id: 'x', action: 'accept', cmp: 'onetrust' }) }));
+    document.dispatchEvent(new CustomEvent('katla-browserconsent:request', { detail: JSON.stringify({ id: 'x', action: 'accept', cmp: 'onetrust' }) }));
     return new Promise((resolve) => setTimeout(() => resolve(window.__results.slice()), 500));
   });
   await storage('set', { exceptions: [] });
@@ -226,12 +278,13 @@ await test('Excluded site is left alone', async () => {
   await storage('set', { exceptions: [] });
 });
 
+// Tracker warnings keep working while automatic consent is paused, so they're switched off too.
 await test('Paused: nothing is injected and nothing happens', async () => {
   const { settings } = await storage('get', 'settings');
-  await storage('set', { settings: { ...settings, enabled: false } });
+  await storage('set', { settings: { ...settings, enabled: false, warnBeforeConsent: false, warnAfterReject: false } });
   await waitForRegistration(control, false);
   await expectNothing(await open(fixture('onetrust.html')), 3_500);
-  await storage('set', { settings: { ...settings, enabled: true } });
+  await storage('set', { settings });
   await waitForRegistration(control, true);
 });
 
@@ -252,7 +305,7 @@ await test('Activity log has every accepted banner', async () => {
   await sleep(500);
   const { log } = await storage('get', 'log');
   const cmps = new Set(log.filter((e) => e.action === 'accepted').map((e) => e.cmp));
-  for (const cmp of ['onetrust', 'cookiebot', 'didomi', 'usercentrics', 'katla', 'sourcepoint', 'generic']) {
+  for (const cmp of ['onetrust', 'cookiebot', 'cookieconsent-v2', 'secureprivacy', 'cookietractor', 'didomi', 'usercentrics', 'katla', 'sourcepoint', 'generic']) {
     assert(cmps.has(cmp), `missing ${cmp} in log (${[...cmps].join(', ')})`);
   }
   const expectedMethods = { onetrust: 'api', didomi: 'api', usercentrics: 'api', katla: 'api', cookiebot: 'click', sourcepoint: 'click' };
@@ -271,6 +324,248 @@ await test('Settings page shows the receipt and activity', async () => {
   const rows = await control.$$eval('#log tr', (rows) => rows.length);
   assert(/^[0-9a-f-]{36}$/.test(receipt), 'receipt id shown');
   assert(rows >= 7, `expected at least 7 log rows, got ${rows}`);
+});
+
+// ------------------------------------------------------------------ Reject all
+
+await test('Settings: switching to Reject all is recorded in the consent history', async () => {
+  await useControl();
+  await control.waitForSelector('#answer-reject');
+  await click(control, '#answer-reject');
+  await sleep(300);
+  const { settings, consent, consentHistory } = await storage('get', ['settings', 'consent', 'consentHistory']);
+  assert(settings.answer === 'reject' && consent.scope.answer === 'reject', 'answer recorded in settings and receipt');
+  assert(consentHistory.at(-1).type === 'answer-reject', 'switch recorded in history');
+});
+
+await test('Reject all: OneTrust through its JavaScript API', async () => {
+  const r = await waitForResult(await open(fixture('onetrust.html')), 'onetrust:reject-api');
+  await sleep(500);
+  assert(!r.includes('onetrust:api') && !r.includes('onetrust:click'), `must not accept, got ${JSON.stringify(r)}`);
+});
+
+await test('Reject all: Katla through KatlaConsent.rejectAll()', async () => {
+  const page = await open(fixture('katla-gdpr.html'));
+  await waitForResult(page, 'katla:reject-api');
+  await sleep(1_000);
+  const r = await results(page);
+  assert(!r.includes('katla:api') && !r.includes('katla:click'), `must not accept, got ${JSON.stringify(r)}`);
+});
+
+await test('Reject all: Katla CCPA widget opts out of sale', async () => {
+  const page = await open(fixture('katla-ccpa.html'));
+  await waitForResult(page, 'katla:opt-out-api');
+  assert(!(await results(page)).includes('katla:api'), 'must not accept');
+});
+
+await test('Reject all: Katla SDK through KatlaConsent.rejectAll()', async () => {
+  const page = await open(fixture('katla-sdk.html'));
+  await waitForResult(page, 'katla-sdk:reject-api');
+  assert((await page.evaluate(() => document.cookie)).includes('_katla_consent=functional'), 'refusal cookie written');
+  // The live widget test runs on the same host later.
+  await page.evaluate(() => (document.cookie = '_katla_consent=; max-age=0; path=/'));
+});
+
+await test('Reject all: clicks the reject button when there is no API (Cookiebot)', async () => {
+  const r = await waitForResult(await open(fixture('cookiebot-delayed.html')), 'cookiebot:decline', 9_000);
+  assert(r.length === 1, `Expected a single action, got ${JSON.stringify(r)}`);
+});
+
+await test('Reject all: Sourcepoint "Reject all" in its consent iframe', async () => {
+  const r = await waitForResult(await open(fixture('sourcepoint.html')), 'sourcepoint:reject');
+  assert(!r.includes('sourcepoint:click'), 'must not accept');
+});
+
+await test('Reject all: CookieConsent v2 "only necessary" on its first screen', async () => {
+  const r = await waitForResult(await open(fixture('cookieconsent-v2.html?necessary')), 'cc2:necessary');
+  assert(!r.includes('cc2:accept'), 'must not accept');
+});
+
+await test('Reject all: CookieConsent v2 with only Settings on its first screen is left alone', async () => {
+  await expectNothing(await open(fixture('cookieconsent-v2.html')));
+});
+
+await test('Reject all: Secure Privacy through its JavaScript API', async () => {
+  const r = await waitForResult(await open(fixture('secureprivacy.html')), 'sp:api-decline');
+  assert(!r.includes('sp:accept'), `must not accept: ${JSON.stringify(r)}`);
+});
+
+await test('Reject all: Cookie Tractor "Only necessary", by its label', async () => {
+  await waitForResult(await open(fixture('cookietractor.html')), 'ct:necessary');
+});
+
+await test('Reject all: Cookie Tractor never saves a custom selection', async () => {
+  await expectNothing(await open(fixture('cookietractor.html?custom')));
+});
+
+await test('Reject all: unrecognised banner, pressed by its label', async () => {
+  const r = await waitForResult(await open(fixture('generic.html')), 'generic:necessary', 8_000);
+  assert(!r.includes('generic:click'), 'must not accept');
+});
+
+await test('Reject all: logged as rejected', async () => {
+  await sleep(300);
+  const { log } = await storage('get', 'log');
+  for (const [cmp, method] of [['onetrust', 'api'], ['katla', 'api'], ['cookiebot', 'click'], ['sourcepoint', 'click'], ['generic', 'heuristic']]) {
+    assert(log.some((e) => e.action === 'rejected' && e.cmp === cmp && e.method === method), `expected ${cmp} rejected via ${method}`);
+  }
+});
+
+await test('Accept all needs its own consent: a Reject all receipt cannot switch to it', async () => {
+  const { consent } = await storage('get', 'consent');
+  const rejectOnly = { ...consent, statements: [{ id: 'reject-all', text: 'Reject' }, { id: 'understand-reject', text: 'Understood' }] };
+  await storage('set', { consent: rejectOnly });
+  try {
+    await useControl();
+    await click(control, '#answer-accept');
+    await control.waitForSelector('#accept-needs-consent:not([hidden])', { timeout: 3_000 });
+    const { settings } = await storage('get', 'settings');
+    assert(settings.answer === 'reject', `answer must stay reject, got ${settings.answer}`);
+  } finally {
+    await storage('set', { consent });
+  }
+});
+
+// ------------------------------------------------------------------ tracker warnings
+
+// The tracker ids flagged on the page, per warning, as the popup shows them.
+async function warningsOf(page) {
+  const record = await pageRecord(page);
+  return control.evaluate(async (rec) => {
+    const { warningsFor } = await import('/lib/warnings.js');
+    const w = warningsFor(rec, { warnBeforeConsent: true, warnAfterReject: true });
+    return { before: w.beforeConsent.map((e) => e.tracker.id), after: w.afterReject.map((e) => e.tracker.id) };
+  }, record);
+}
+
+async function changeSettings(patch) {
+  const { settings } = await storage('get', 'settings');
+  await storage('set', { settings: { ...settings, ...patch } });
+  await sleep(300);
+}
+
+await test('Tracker warnings: off, nothing is recorded', async () => {
+  await changeSettings({ warnBeforeConsent: false, warnAfterReject: false });
+  const page = await open(fixture('trackers.html?run=off'));
+  await waitForResult(page, 'trackers:tracked-after');
+  await sleep(500);
+  const record = await pageRecord(page);
+  assert(record?.decisions[0]?.decision === 'rejected', 'BrowserConsent rejected');
+  assert(record.hits.length === 0, `no hits while warnings are off, got ${JSON.stringify(record.hits)}`);
+  assert((await badgeOf(page)) === '✓', 'badge shows the answered tick');
+});
+
+await test('Tracker warnings: before consent and after a refusal', async () => {
+  await storage('set', { siteDecisions: {}, siteFindings: {} });
+  await changeSettings({ warnBeforeConsent: true, warnAfterReject: true });
+  const page = await open(fixture('trackers.html?run=reject'));
+  await waitForResult(page, 'trackers:reject');
+  await waitForResult(page, 'trackers:tracked-after');
+  await sleep(700);
+  const w = await warningsOf(page);
+  assert(w.before.includes('google-analytics') && w.before.includes('adobe'), `before consent: ${JSON.stringify(w)}`);
+  assert(w.after.includes('adobe') && !w.after.includes('google-analytics'), `after the refusal: ${JSON.stringify(w)}`);
+  assert((await badgeOf(page)) === '2', `badge should count 2 trackers, got ${await badgeOf(page)}`);
+  // A frame that loads later marks the tab as loading again in Chrome; that isn't a new page.
+  await page.evaluate((src) => document.body.append(Object.assign(document.createElement('iframe'), { src })), fixture('interaction.html'));
+  await sleep(1_000);
+  const record = await pageRecord(page);
+  assert(record?.bannerAt && record.hits.length >= 2, `the record survives a frame loading: ${JSON.stringify(record)}`);
+});
+
+await test('Tracker warnings: what was flagged is remembered for the site', async () => {
+  const page = await open(fixture('plain.html'));
+  await sleep(1_000);
+  assert((await badgeOf(page)) === '2', `a later page still counts the 2 trackers, got ${await badgeOf(page)}`);
+  const { siteFindings } = await storage('get', 'siteFindings');
+  const site = siteFindings?.['127.0.0.1'];
+  assert(
+    site?.beforeConsent.some((e) => e.tracker === 'google-analytics') && site.afterReject.some((e) => e.tracker === 'adobe'),
+    `remembered: ${JSON.stringify(site)}`,
+  );
+});
+
+await test('Tracker warnings: a later visit is judged against the refusal on file', async () => {
+  const page = await open(fixture('trackers.html?run=reject'));
+  await sleep(1_500);
+  const record = await pageRecord(page);
+  assert(record?.siteDecision === 'rejected' && !record.bannerAt, `record: ${JSON.stringify(record)}`);
+  const w = await warningsOf(page);
+  assert(w.before.length === 0, `nothing before consent: ${JSON.stringify(w)}`);
+  assert(w.after.includes('google-analytics') && w.after.includes('adobe'), `after the refusal: ${JSON.stringify(w)}`);
+});
+
+await test('Tracker warnings: trackers after Accept all are fine', async () => {
+  await storage('set', { siteDecisions: {}, siteFindings: {} });
+  await changeSettings({ answer: 'accept' });
+  const page = await open(fixture('trackers.html?run=accept'));
+  await waitForResult(page, 'trackers:accept');
+  await waitForResult(page, 'trackers:tracked-after');
+  await sleep(700);
+  const w = await warningsOf(page);
+  assert(w.before.includes('google-analytics') && w.before.includes('adobe'), `before consent: ${JSON.stringify(w)}`);
+  assert(w.after.length === 0, `nothing after accepting: ${JSON.stringify(w)}`);
+  const adobe = (await pageRecord(page)).hits.find((h) => h.tracker === 'adobe');
+  assert(adobe.times.length >= 2, 'the hit after accepting is recorded, just not flagged');
+});
+
+await test('Tracker warnings: work with auto consent off and follow the user’s own answer', async () => {
+  await storage('set', { siteDecisions: {}, siteFindings: {} });
+  await changeSettings({ enabled: false });
+  await waitForRegistration(control, true);
+  const { log: logBefore } = await storage('get', 'log');
+  const page = await open(fixture('trackers.html?run=user'));
+  await sleep(1_500);
+  assert((await results(page)).length === 0, 'nothing may be answered automatically');
+  await page.click('#onetrust-reject-all-handler');
+  await waitForResult(page, 'trackers:tracked-after');
+  await sleep(700);
+  const record = await pageRecord(page);
+  const [decision] = record.decisions;
+  assert(decision?.by === 'user' && decision.decision === 'rejected', `the user's refusal: ${JSON.stringify(record.decisions)}`);
+  const w = await warningsOf(page);
+  assert(w.before.includes('google-analytics') && w.after.includes('adobe'), `warnings: ${JSON.stringify(w)}`);
+  const { log } = await storage('get', 'log');
+  assert(JSON.stringify(log[0]) === JSON.stringify(logBefore[0]), 'the user’s own answer is not logged as BrowserConsent’s');
+  await changeSettings({ enabled: true, warnBeforeConsent: false, warnAfterReject: false });
+});
+
+// ------------------------------------------------------------------ blocking
+
+const dynamicRules = () => control.evaluate(() => (globalThis.browser ?? globalThis.chrome).declarativeNetRequest.getDynamicRules());
+const probePixel = (page) => page.evaluate(() => fetch('/b/ss/probe', { cache: 'no-store' }).then(() => 'loaded', () => 'blocked'));
+
+await test('Blocking: trackers on a site without consent are blocked, and counted in green', async () => {
+  await storage('set', { siteDecisions: {}, siteFindings: {} });
+  await changeSettings({ answer: 'reject', warnBeforeConsent: true, warnAfterReject: true, blockTrackers: true });
+  const page = await open(fixture('trackers.html?run=block-reject'));
+  await waitForResult(page, 'trackers:reject');
+  await waitForResult(page, 'trackers:tracked-after');
+  await sleep(700);
+  const record = await pageRecord(page);
+  assert(record.hits.length >= 2 && record.hits.every((h) => h.blocked), `every hit blocked: ${JSON.stringify(record.hits)}`);
+  assert(!(await page.evaluate(() => document.cookie)).includes('_ga='), 'the tracking cookie is deleted');
+  assert((await probePixel(page)) === 'blocked', 'the pixel request is blocked');
+  assert((await badgeOf(page)) === '2', `badge counts the cookie and the pixel, got ${await badgeOf(page)}`);
+  const color = await control.evaluate(async (tabId) => (globalThis.browser ?? globalThis.chrome).action.getBadgeBackgroundColor({ tabId }), await tabIdOf(page));
+  assert(color[1] > color[0] && color[1] > color[2], `badge is green, got ${color}`);
+});
+
+await test('Blocking: a site gets its trackers back once it has consent', async () => {
+  await changeSettings({ answer: 'accept' });
+  const page = await open(fixture('trackers.html?run=block-accept'));
+  await waitForResult(page, 'trackers:accept');
+  await sleep(700);
+  const allow = (await dynamicRules()).find((rule) => rule.action.type === 'allow');
+  assert(allow?.condition.initiatorDomains?.includes('127.0.0.1'), `allowed after accepting: ${JSON.stringify(allow)}`);
+  assert((await probePixel(page)) === 'loaded', 'pixels load again');
+});
+
+await test('Blocking: switched off, no rules are left', async () => {
+  await changeSettings({ blockTrackers: false, warnBeforeConsent: false, warnAfterReject: false });
+  await sleep(300);
+  assert((await dynamicRules()).length === 0, `rules left: ${(await dynamicRules()).length}`);
+  await storage('set', { siteDecisions: {}, siteFindings: {} });
 });
 
 await test('Withdrawing consent stops everything', async () => {
@@ -305,7 +600,7 @@ await test('Live Katla widget from dist.katla.app', async () => {
   }
   assert(cookie.includes('_katla_consent=all'), `expected _katla_consent=all, cookies: ${cookie || '(none)'}`);
   const hidden = await page
-    .waitForFunction(() => !document.querySelector('.katla-widget:not(.katla-hidden) .katla-consent-box'), { timeout: 5_000 })
+    .waitForFunction(() => !document.querySelector('.katla-widget:not(.katla-hidden) > div:has(button ~ button)'), { timeout: 5_000 })
     .then(() => true, () => false);
   assert(hidden, 'widget should be hidden after accepting');
   const { log } = await storage('get', 'log');

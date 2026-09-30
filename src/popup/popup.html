@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Katla AutoConsent</title>
+    <title>Katla BrowserConsent</title>
     <link rel="stylesheet" href="../shared/ui.css" />
     <link rel="stylesheet" href="popup.css" />
   </head>
@@ -12,13 +12,13 @@
         <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
           <path d="M30.769 9.846A16 16 0 1 1 22.154 1.231A8.615 8.615 0 0 0 30.769 9.846Z" fill="currentColor" />
         </svg>
-        <div>AutoConsent <small>by Katla</small></div>
+        <div>BrowserConsent <small>by <a href="https://katla.app" target="_blank" rel="noopener">Katla</a></small></div>
       </div>
       <span id="status" class="status-pill"></span>
     </header>
 
     <section id="inactive" class="panel" hidden>
-      <p><strong>AutoConsent isn't active.</strong></p>
+      <p><strong>BrowserConsent isn't active.</strong></p>
       <p class="muted">It won't answer any cookie banners until you've read what it does and given your consent.</p>
       <button type="button" class="btn btn-primary wide" id="activate">Review and activate</button>
     </section>
@@ -27,16 +27,36 @@
       <div class="panel">
         <label class="switch-row">
           <span>
-            <strong>Answer cookie banners</strong>
+            <strong>Auto consent</strong>
             <span class="muted sub" id="enabled-hint"></span>
           </span>
           <span class="switch"><input type="checkbox" id="enabled" role="switch" /><span></span></span>
         </label>
+        <div class="segmented" id="answer" role="radiogroup" aria-label="How BrowserConsent answers cookie banners">
+          <label><input type="radio" name="answer" value="reject" /><span>Reject all</span></label>
+          <label><input type="radio" name="answer" value="accept" /><span>Accept all</span></label>
+        </div>
       </div>
 
       <div class="panel site" id="site">
         <p class="site-host" id="site-host"></p>
         <p class="site-state" id="site-state"></p>
+
+        <div class="warnings" id="warnings" hidden>
+          <div class="warning-group" id="warnings-before" hidden>
+            <p class="warning-kind">Trackers before consent</p>
+            <ul class="tracker-list" id="warnings-before-list"></ul>
+          </div>
+          <div class="warning-group" id="warnings-after" hidden>
+            <p class="warning-kind">Trackers after a refusal</p>
+            <ul class="tracker-list" id="warnings-after-list"></ul>
+          </div>
+          <div class="warning-group blocked" id="blocked" hidden>
+            <p class="warning-kind">Blocked without your consent</p>
+            <ul class="tracker-list" id="blocked-list"></ul>
+          </div>
+          <p class="muted small" id="warnings-none" hidden>No tracker warnings on this page.</p>
+        </div>
 
         <div id="site-controls">
           <label class="switch-row site-toggle">
@@ -51,7 +71,7 @@
 
           <div class="confirm" id="confirm-withdraw" hidden>
             <p>
-              AutoConsent asks this site's consent platform to record a refusal, stops answering banners here, and
+              BrowserConsent asks this site's consent platform to record a refusal, stops answering banners here, and
               reloads the page.
             </p>
             <div class="row">

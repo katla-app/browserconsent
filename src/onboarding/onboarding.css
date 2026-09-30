@@ -49,6 +49,10 @@
   margin-bottom: 6px;
 }
 
+.notice-doc p + p {
+  margin-top: 8px;
+}
+
 .notice-doc ul {
   margin: 0;
   padding-left: 20px;
@@ -62,11 +66,28 @@
   gap: 16px;
 }
 
+.answers {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.answers legend {
+  padding: 0;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+#statements-step,
 .statements {
   display: grid;
   gap: 10px;
 }
 
+.answer,
 .statement {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -79,15 +100,18 @@
   transition: border-color 0.15s, background-color 0.15s;
 }
 
+.answer:hover,
 .statement:hover {
   border-color: var(--brand);
 }
 
+.answer:has(input:checked),
 .statement:has(input:checked) {
   border-color: var(--brand);
   background: var(--brand-soft);
 }
 
+.answer input,
 .statement input {
   width: 18px;
   height: 18px;

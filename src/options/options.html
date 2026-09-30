@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Katla AutoConsent settings</title>
+    <title>Katla BrowserConsent settings</title>
     <link rel="icon" href="../icons/icon-32.png" />
     <link rel="stylesheet" href="../shared/ui.css" />
     <link rel="stylesheet" href="options.css" />
@@ -15,7 +15,7 @@
           <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
             <path d="M30.769 9.846A16 16 0 1 1 22.154 1.231A8.615 8.615 0 0 0 30.769 9.846Z" fill="currentColor" />
           </svg>
-          <div>AutoConsent <small>by Katla</small></div>
+          <div>BrowserConsent <small>by <a href="https://katla.app" target="_blank" rel="noopener">Katla</a></small></div>
         </div>
         <span id="status" class="status-pill"></span>
       </header>
@@ -27,7 +27,7 @@
         </div>
 
         <div id="consent-none" hidden>
-          <p>You haven't given AutoConsent permission to answer cookie banners, so it isn't doing anything.</p>
+          <p>You haven't given BrowserConsent permission to answer cookie banners, so it isn't doing anything.</p>
           <a class="btn btn-primary" href="../onboarding/onboarding.html">Review and activate</a>
         </div>
 
@@ -54,7 +54,7 @@
           </div>
           <div class="confirm" id="withdraw-confirm" hidden>
             <p>
-              AutoConsent will stop answering cookie banners straight away. Consents it already gave stay in place on
+              BrowserConsent will stop answering cookie banners straight away. Consents it already gave stay in place on
               those websites until you withdraw them there or delete their cookies, which you can do below.
             </p>
             <div class="actions">
@@ -69,32 +69,93 @@
       </section>
 
       <section class="card block" id="settings-block" aria-labelledby="settings-title">
-        <h2 id="settings-title">Settings</h2>
+        <h2 id="settings-title">Auto consent</h2>
         <label class="switch-row">
           <span>
-            <strong>Answer cookie banners</strong>
-            <span class="muted sub">Turn off to pause AutoConsent everywhere without withdrawing your consent.</span>
+            <strong>Answer cookie banners automatically</strong>
+            <span class="muted sub">Turn off to pause BrowserConsent everywhere without withdrawing your consent. Tracker warnings keep working.</span>
           </span>
           <span class="switch"><input type="checkbox" id="enabled" role="switch" /><span></span></span>
         </label>
+        <fieldset class="answers" id="answers">
+          <legend>When a website asks for your consent</legend>
+          <label class="answer">
+            <input type="radio" name="answer" value="reject" id="answer-reject" />
+            <span><strong>Reject all</strong><span class="muted sub">Refuses every cookie that isn’t strictly necessary.</span></span>
+          </label>
+          <label class="answer">
+            <input type="radio" name="answer" value="accept" id="answer-accept" />
+            <span><strong>Accept all</strong><span class="muted sub">Accepts all cookies, including for analytics and advertising.</span></span>
+          </label>
+        </fieldset>
+        <div class="notice" id="accept-needs-consent" hidden>
+          <p>BrowserConsent needs your consent before it accepts cookies for you. Switching is recorded in your consent history.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="../onboarding/onboarding.html?answer=accept">Review and allow Accept all</a>
+          </div>
+        </div>
         <label class="switch-row">
           <span>
-            <strong>Also answer banners AutoConsent doesn't recognise</strong>
-            <span class="muted sub">Experimental. Clicks an "Accept all" style button in a cookie notice. Changing this is recorded in your consent history.</span>
+            <strong>Also answer banners BrowserConsent doesn't recognise</strong>
+            <span class="muted sub">Experimental. Clicks a "Reject all" or "Accept all" style button in a cookie notice, whichever you chose. Changing this is recorded in your consent history.</span>
           </span>
           <span class="switch"><input type="checkbox" id="generic" role="switch" /><span></span></span>
         </label>
       </section>
 
+      <section class="card block" id="warnings-block" aria-labelledby="warnings-title">
+        <h2 id="warnings-title">Tracker warnings</h2>
+        <p class="muted">
+          Get a warning on the toolbar button when a website uses a common tracking cookie or pixel when it shouldn’t.
+          Checked in this browser only, and nothing is sent anywhere.
+        </p>
+        <label class="switch-row">
+          <span>
+            <strong>Before consent</strong>
+            <span class="muted sub">A tracking cookie was set or a pixel was sent while the site’s cookie banner was still waiting for an answer.</span>
+          </span>
+          <span class="switch"><input type="checkbox" id="warn-before" role="switch" /><span></span></span>
+        </label>
+        <label class="switch-row">
+          <span>
+            <strong>After a refusal</strong>
+            <span class="muted sub">A tracking cookie was set or a pixel was sent after you or BrowserConsent rejected cookies on the site, then or on an earlier visit.</span>
+          </span>
+          <span class="switch"><input type="checkbox" id="warn-after" role="switch" /><span></span></span>
+        </label>
+        <label class="switch-row">
+          <span>
+            <strong>Block them</strong>
+            <span class="muted sub">Blocks these trackers’ pixels and deletes their cookies on sites that don’t have your consent: before you’ve answered the banner and after a refusal. Sites get them back once they have your “Accept all” or a custom choice, or when you turn BrowserConsent off for them. The toolbar button shows how many were blocked, in green. Some sites may not work fully without them.</span>
+          </span>
+          <span class="switch"><input type="checkbox" id="block-trackers" role="switch" /><span></span></span>
+        </label>
+        <details>
+          <summary>Trackers BrowserConsent knows (<span id="tracker-count"></span>)</summary>
+          <p class="muted small tracker-note">
+            Cookies ending in * match any name that starts that way. Google hits that Consent Mode marks as denied
+            are shown as cookieless pings: they carry no cookies, but still reach Google.
+          </p>
+          <div class="table-wrap">
+            <table class="trackers">
+              <thead>
+                <tr><th scope="col">Tracker</th><th scope="col">Cookies</th><th scope="col">Pixels</th></tr>
+              </thead>
+              <tbody id="trackers"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
       <section class="card block" aria-labelledby="exceptions-title">
-        <h2 id="exceptions-title">Sites where AutoConsent is off</h2>
+        <h2 id="exceptions-title">Sites where BrowserConsent is off</h2>
         <form id="exception-form" class="inline-form">
           <label class="visually-hidden" for="exception-input">Website</label>
           <input id="exception-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false" />
           <button type="submit" class="btn">Add</button>
         </form>
         <ul id="exceptions" class="chips"></ul>
-        <p id="exceptions-empty" class="muted">None. AutoConsent answers banners on every website.</p>
+        <p id="exceptions-empty" class="muted">None. BrowserConsent answers banners on every website.</p>
       </section>
 
       <section class="card block" aria-labelledby="activity-title">
@@ -105,7 +166,7 @@
             <button type="button" class="btn" id="clear-log">Clear</button>
           </div>
         </div>
-        <p class="muted">Every banner AutoConsent answered for you, and every consent you withdrew. Kept in this browser only (last 500 entries).</p>
+        <p class="muted">Every banner BrowserConsent answered for you, and every consent you withdrew. Kept in this browser only (last 500 entries).</p>
         <div class="table-wrap">
           <table>
             <thead>
@@ -118,7 +179,7 @@
 
         <div class="notice sites-reset" id="sites-reset" hidden>
           <p><strong id="sites-count"></strong></p>
-          <p class="muted">Deleting their cookies and stored data resets the consent AutoConsent gave, and those sites will ask you again. You'll be signed out of them.</p>
+          <p class="muted">Deleting their cookies and stored data resets the consent BrowserConsent gave, and those sites will ask you again. You'll be signed out of them.</p>
           <div class="actions">
             <button type="button" class="btn btn-danger" id="clear-sites">Delete cookies on these sites</button>
           </div>
@@ -131,29 +192,47 @@
         <ul id="platforms" class="chips plain"></ul>
       </section>
 
+      <section class="card block" id="developer-block" aria-labelledby="developer-title">
+        <h2 id="developer-title">For developers</h2>
+        <label class="switch-row">
+          <span>
+            <strong>Katla debug log</strong>
+            <span class="muted sub">On websites that use Katla, logs how Katla is set up, the consent it has on file, every change and what BrowserConsent did, in the page’s console (DevTools). Nothing is sent anywhere.</span>
+          </span>
+          <span class="switch"><input type="checkbox" id="katla-debug" role="switch" /><span></span></span>
+        </label>
+      </section>
+
       <section class="card block prose" id="privacy" aria-labelledby="privacy-title">
         <h2 id="privacy-title">Privacy and legal information</h2>
         <h3>Data</h3>
         <p>
-          AutoConsent does not collect, send or sell any data. It has no servers, no analytics and no remote code. Your
-          consent receipt, settings, excluded sites and activity log are stored in this browser's extension storage and
-          are removed when you uninstall the extension. It reads the web pages you visit only to find and answer cookie
-          banners.
+          BrowserConsent does not collect, send or sell any data. It has no servers, no analytics and no remote code. Your
+          consent receipt, settings, excluded sites, activity log and the last cookie choice made on each website are
+          stored in this browser's extension storage and are removed when you uninstall the extension. It reads the web
+          pages you visit only to find and answer cookie banners. With tracker warnings on, it also checks the cookies
+          websites set and the requests they send against its list of common trackers, in this browser only.
         </p>
         <h3>How your consent is handled</h3>
         <ul>
-          <li>You authorise AutoConsent in advance, by ticking separate, unticked statements after reading what it does. Until then, and whenever you pause or withdraw, it doesn't run on any website.</li>
-          <li>Where a website's consent platform has a JavaScript API, AutoConsent records your choice through it; otherwise it presses the banner's "Accept all" button.</li>
+          <li>You authorise BrowserConsent in advance, by ticking separate, unticked statements after reading what it does. Until then, and whenever you pause or withdraw, it doesn't run on any website.</li>
+          <li>You choose whether BrowserConsent rejects all or accepts all. Accepting all needs your consent to it, and switching is recorded in your consent history.</li>
+          <li>Where a website's consent platform has a JavaScript API, BrowserConsent records your choice through it; otherwise it presses the banner's matching button.</li>
           <li>The exact wording you agreed to, the time and a fingerprint of the text are kept as your receipt, which you can export.</li>
-          <li>If the wording changes in substance, AutoConsent pauses until you agree again.</li>
-          <li>Banners you've already answered are left alone, and AutoConsent steps aside once you click or type on a page.</li>
+          <li>If the wording changes in substance, BrowserConsent pauses until you agree again.</li>
+          <li>Banners you've already answered are left alone, and BrowserConsent steps aside once you click or type on a page.</li>
           <li>You can pause it, exclude websites, withdraw consent per website and withdraw your authorisation, each in a couple of clicks.</li>
         </ul>
         <h3>Please note</h3>
         <p>
-          AutoConsent answers cookie banners on your behalf. Websites stay responsible for asking for consent correctly
+          BrowserConsent answers cookie banners on your behalf. Websites stay responsible for asking for consent correctly
           and for how they use your data. Rules on whether consent can be given in advance through a tool like this
           differ between countries, so a website may ask you again or rely on its own records.
+        </p>
+        <h3>About</h3>
+        <p>
+          BrowserConsent is made by <a href="https://katla.app" target="_blank" rel="noopener">Katla</a>, which helps
+          websites ask for cookie consent properly.
         </p>
       </section>
     </main>

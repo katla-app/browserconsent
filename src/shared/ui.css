@@ -115,6 +115,16 @@ a {
   letter-spacing: 0;
 }
 
+.brand small a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand small a:hover {
+  color: var(--brand-ink);
+  text-decoration: underline;
+}
+
 .eyebrow {
   color: var(--brand-ink);
   font-size: 12px;

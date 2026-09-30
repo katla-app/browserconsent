@@ -18,6 +18,8 @@
   window.KatlaConsent = {
     hasConsent: () => consent !== null,
     acceptAll() { record('katla:api'); consent = 'all'; },
+    rejectAll() { record('katla:reject-api'); consent = 'rejected'; },
+    optOutOfSale() { record('katla:opt-out-api'); consent = 'opted-out'; },
     withdrawConsent() { record('katla:withdraw'); },
     getRegulation: () => 'ccpa',
   };
