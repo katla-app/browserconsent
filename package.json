@@ -8,6 +8,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "icons": "node scripts/make-icons.mjs",
+    "store-assets": "node scripts/build.mjs chrome && node scripts/store-assets.mjs",
     "test": "node scripts/build.mjs && node test/e2e.mjs",
     "test:live": "node scripts/build.mjs && node test/live.mjs",
     "lint:firefox": "web-ext lint --source-dir dist/firefox"

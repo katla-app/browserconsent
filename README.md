@@ -25,6 +25,7 @@ npm install
 npm run build          # dist/chrome, dist/firefox and a store-ready zip for each
 npm run lint:firefox   # Mozilla's add-on linter
 npm run icons          # regenerate PNG icons from the official Katla mark in assets/logo (no dependencies)
+npm run store-assets   # Chrome Web Store icon and 1280x800 screenshots in store/chrome, from real captures
 ```
 
 Load for development:
@@ -118,4 +119,5 @@ Add a rule to `src/content/rules.js` with its `accept` and first-layer `reject` 
 
 1. Bump `version` in `package.json`. If the notice or statements change in substance, also bump `POLICY_VERSION` in `src/lib/constants.js`, which asks every user to consent again.
 2. `npm run build && npm run lint:firefox && npm test && node test/e2e.mjs --firefox`
-3. Upload `dist/katla-browserconsent-chrome-<version>.zip` to the Chrome Web Store and `dist/katla-browserconsent-firefox-<version>.zip` to addons.mozilla.org. Use `PRIVACY.md` as the privacy policy. The code is unminified, so AMO needs no separate source upload.
+3. If the UI changed, `npm run store-assets` to refresh the store images. The listing text and privacy answers are in `store/chrome/listing.md`.
+4. Upload `dist/katla-browserconsent-chrome-<version>.zip` to the Chrome Web Store and `dist/katla-browserconsent-firefox-<version>.zip` to addons.mozilla.org. Use `PRIVACY.md` as the privacy policy. The code is unminified, so AMO needs no separate source upload.

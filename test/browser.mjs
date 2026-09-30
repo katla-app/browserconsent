@@ -48,7 +48,8 @@ export function findBrowser(target) {
 }
 
 // Launches the browser with dist/<target> installed. Resolves once the onboarding page is open.
-export async function launchWithExtension(target) {
+// `args` are extra Chrome command-line switches.
+export async function launchWithExtension(target, { args = [] } = {}) {
   const extensionPath = resolve(root, 'dist', target);
   const executablePath = findBrowser(target);
   const browser = await puppeteer.launch({
@@ -56,7 +57,7 @@ export async function launchWithExtension(target) {
     executablePath,
     headless: !process.env.HEADFUL,
     ...(target === 'chrome'
-      ? { pipe: true, enableExtensions: [extensionPath], args: ['--no-first-run', '--no-default-browser-check'] }
+      ? { pipe: true, enableExtensions: [extensionPath], args: ['--no-first-run', '--no-default-browser-check', ...args] }
       : // Lets WebDriver BiDi script moz-extension: pages.
         { args: ['--remote-allow-system-access'] }),
   });
