@@ -121,3 +121,7 @@ Add a rule to `src/content/rules.js` with its `accept` and first-layer `reject` 
 2. `npm run build && npm run lint:firefox && npm test && node test/e2e.mjs --firefox`
 3. If the UI changed, `npm run store-assets` to refresh the store images. The listing text and privacy answers are in `store/chrome/listing.md`.
 4. Upload `dist/katla-browserconsent-chrome-<version>.zip` to the Chrome Web Store and `dist/katla-browserconsent-firefox-<version>.zip` to addons.mozilla.org. Use `PRIVACY.md` as the privacy policy. The code is unminified, so AMO needs no separate source upload.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
