@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>Generic banner fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Unrecognised banner (Swedish)</h1>
+<div class="site-cookie-notice banner">
+  Vi använder kakor (cookies) för att förbättra din upplevelse och för marknadsföring.
+  <a href="/integritetspolicy">Läs mer</a>
+  <button id="necessary">Endast nödvändiga</button>
+  <button id="all">Acceptera alla</button>
+</div>
+<script>
+  document.getElementById('all').onclick = () => { record('generic:click'); hide('.site-cookie-notice'); };
+  document.getElementById('necessary').onclick = () => { record('generic:necessary'); hide('.site-cookie-notice'); };
+</script>

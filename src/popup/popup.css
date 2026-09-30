@@ -1,0 +1,83 @@
+body {
+  width: 348px;
+  font-size: 14px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel {
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.panel + .panel {
+  border-top: 1px solid var(--border);
+}
+
+.sub {
+  display: block;
+  font-size: 12px;
+}
+
+.wide {
+  width: 100%;
+}
+
+.site-host {
+  font-weight: 650;
+  font-size: 16px;
+  word-break: break-all;
+}
+
+.site-state {
+  color: var(--muted);
+  margin-top: -6px;
+}
+
+.site-state.ok {
+  color: var(--ok);
+}
+
+.site-toggle {
+  padding: 10px 0 4px;
+}
+
+.site-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.confirm {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.confirm .row {
+  display: flex;
+  gap: 8px;
+}
+
+.confirm .row .btn {
+  flex: 1;
+}
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+}

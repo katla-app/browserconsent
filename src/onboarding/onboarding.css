@@ -1,0 +1,177 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  display: grid;
+  gap: 24px;
+}
+
+#consent-step {
+  display: grid;
+  gap: 20px;
+}
+
+.hero {
+  display: grid;
+  gap: 12px;
+  padding: 12px 0 4px;
+}
+
+.hero h1,
+.done h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(30px, 6vw, 42px);
+  letter-spacing: -0.015em;
+}
+
+.lede {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+.notice-doc {
+  padding: 8px 24px;
+}
+
+.notice-doc section {
+  padding: 18px 0;
+}
+
+.notice-doc section + section {
+  border-top: 1px solid var(--border);
+}
+
+.notice-doc h2,
+.agree h2 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.notice-doc ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.agree {
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.statements {
+  display: grid;
+  gap: 10px;
+}
+
+.statement {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.statement:hover {
+  border-color: var(--brand);
+}
+
+.statement:has(input:checked) {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.statement input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--brand);
+}
+
+.option {
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.block {
+  display: block;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions .btn {
+  min-width: 160px;
+}
+
+.fineprint {
+  font-size: 13px;
+}
+
+.done {
+  padding: 32px 24px;
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.done-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.receipt {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.receipt div {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.receipt dt {
+  color: var(--muted);
+  min-width: 72px;
+}
+
+.receipt dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+@media (max-width: 520px) {
+  .notice-doc,
+  .agree {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .actions .btn {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><title>Usercentrics shadow click fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Usercentrics without API (click inside closed shadow root)</h1>
+<div id="usercentrics-root"></div>
+<script>
+  const root = document.getElementById('usercentrics-root').attachShadow({ mode: 'closed' });
+  root.innerHTML = '<div class="banner" style="position:fixed;bottom:0;left:0;right:0;padding:24px;background:#fff">Privacy settings <button data-testid="uc-deny-all-button">Deny</button><button data-testid="uc-accept-all-button">Accept all</button></div>';
+  root.querySelector('[data-testid="uc-accept-all-button"]').onclick = () => { record('usercentrics:click'); root.querySelector('.banner').remove(); };
+  root.querySelector('[data-testid="uc-deny-all-button"]').onclick = () => record('usercentrics:deny');
+</script>

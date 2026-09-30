@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>Sourcepoint message</title><link rel="stylesheet" href="style.css">
+<div class="message type-modal"><div class="message-container">
+  <p>We and our partners store and access information on your device.</p>
+  <button class="message-component message-button no-children focusable sp_choice_type_12">Settings</button>
+  <button class="message-component message-button no-children focusable sp_choice_type_13">Reject all</button>
+  <button class="message-component message-button no-children focusable sp_choice_type_11">Accept all</button>
+</div></div>
+<script>
+  document.querySelector('.sp_choice_type_11').onclick = () => parent.postMessage('sp:accept', '*');
+  document.querySelector('.sp_choice_type_13').onclick = () => parent.postMessage('sp:reject', '*');
+</script>

@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8"><title>Katla GDPR fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Katla widget, GDPR layout (markup mirrors the live widget; like the real one, acceptAll() doesn't close it)</h1>
+<div id="katla-widget-root"><div>
+  <div class="katla-widget katla-position-bottom-right katla-layout-box" style="position:fixed;bottom:20px;right:20px">
+    <div class="katla-consent-box" style="background:#fff;padding:20px;border:1px solid #ddd">
+      <div class="katla-consent-header"><h2 class="katla-consent-title">We value your privacy</h2><p class="katla-consent-description">We use cookies.</p></div>
+      <div class="katla-consent-actions">
+        <button class="katla-btn katla-btn-outline">Customize</button>
+        <button class="katla-btn katla-btn-secondary">Reject</button>
+        <button class="katla-btn katla-btn-primary">Accept All</button>
+      </div>
+    </div>
+  </div>
+</div></div>
+<script>
+  let consent = null;
+  const widget = document.querySelector('.katla-widget');
+  document.querySelector('.katla-btn-primary').onclick = () => { record('katla:click'); consent = 'all'; widget.classList.add('katla-hidden'); widget.style.display = 'none'; };
+  document.querySelector('.katla-btn-secondary').onclick = () => { record('katla:reject'); consent = 'rejected'; };
+  window.KatlaConsent = {
+    hasConsent: () => consent !== null,
+    acceptAll() { record('katla:api'); consent = 'all'; },
+    withdrawConsent() { record('katla:withdraw'); consent = 'rejected'; },
+    getRegulation: () => 'gdpr',
+  };
+</script>

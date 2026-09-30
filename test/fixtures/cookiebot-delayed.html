@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><title>Cookiebot fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Cookiebot without its JavaScript API (click fallback; banner appears after 1.5 s)</h1>
+<script>
+  setTimeout(() => {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="CybotCookiebotDialog" class="banner">
+        This website uses cookies.
+        <button id="CybotCookiebotDialogBodyButtonDecline">Deny</button>
+        <button id="CybotCookiebotDialogBodyLevelButtonLevelOptinAllowallSelection">Allow selection</button>
+        <button id="CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll">Allow all</button>
+      </div>`);
+    document.getElementById('CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll').onclick = () => { record('cookiebot:click'); hide('#CybotCookiebotDialog'); };
+    document.getElementById('CybotCookiebotDialogBodyButtonDecline').onclick = () => { record('cookiebot:decline'); hide('#CybotCookiebotDialog'); };
+  }, 1500);
+</script>

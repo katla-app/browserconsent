@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><title>Didomi API fallback fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Didomi with unknown button markup (API fallback)</h1>
+<div id="didomi-host">
+  <div id="didomi-notice" class="banner">
+    We and our partners use cookies.
+    <button class="renamed-agree-button">Agree</button>
+  </div>
+</div>
+<script>
+  window.Didomi = {
+    shouldConsentBeCollected: () => true,
+    setUserAgreeToAll() { record('didomi:api'); hide('#didomi-notice'); },
+    setUserDisagreeToAll() { record('didomi:withdraw'); },
+  };
+</script>

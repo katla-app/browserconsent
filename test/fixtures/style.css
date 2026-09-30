@@ -1,0 +1,3 @@
+body { font: 16px system-ui; margin: 40px; min-height: 150vh; }
+.banner { position: fixed; left: 0; right: 0; bottom: 0; padding: 24px; background: #fff; border-top: 2px solid #5b21b6; }
+button { margin: 4px; padding: 8px 12px; }

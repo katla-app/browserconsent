@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Activate Katla AutoConsent</title>
+    <link rel="icon" href="../icons/icon-32.png" />
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="onboarding.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="brand">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M30.769 9.846A16 16 0 1 1 22.154 1.231A8.615 8.615 0 0 0 30.769 9.846Z" fill="currentColor" />
+        </svg>
+        <div>AutoConsent <small>by Katla</small></div>
+      </header>
+
+      <section id="consent-step">
+        <div class="hero">
+          <p class="eyebrow" id="reconsent-note" hidden>We've updated AutoConsent. It stays paused until you agree again.</p>
+          <h1>Set your privacy preferences once.</h1>
+          <p class="lede">
+            Katla handles cookie banners for you by giving consent on your behalf. It can only do that once you've
+            consented to it yourself, so here is exactly what you would be agreeing to.
+          </p>
+        </div>
+
+        <article id="notice" class="card notice-doc">
+          <section>
+            <h2>What AutoConsent does</h2>
+            <p>
+              When a website asks for your cookie consent, AutoConsent gives it for you by choosing
+              <strong>Accept all</strong>. Where the website's consent platform offers a way to record that choice
+              directly, AutoConsent uses it; otherwise it presses the banner's "Accept all" button. It recognises
+              Katla and <span id="platform-count">many other</span> consent platforms, including OneTrust, Cookiebot,
+              Usercentrics, Didomi, Sourcepoint, TrustArc, InMobi Choice and Google Funding Choices.
+            </p>
+          </section>
+          <section>
+            <h2>What that means for your privacy</h2>
+            <p>
+              Accepting all cookies allows websites and their partners to store and read information on your device
+              for analytics, personalisation and advertising. That can include tracking you across websites, building
+              a profile of your interests, sharing data with advertising partners and, in some cases, transferring data
+              outside the EU/EEA. Each website stays responsible for how it uses your data, and its own cookie and
+              privacy policies apply.
+            </p>
+          </section>
+          <section>
+            <h2>What stays in your control</h2>
+            <ul>
+              <li>Until you activate AutoConsent below, it doesn't run on any website at all.</li>
+              <li>Banners you've already answered are left alone. AutoConsent also steps aside as soon as you click or type on a page, so the choice there is yours.</li>
+              <li>You can pause AutoConsent, or switch it off for specific websites, at any time.</li>
+              <li>You can withdraw consent on any website from the toolbar button. AutoConsent asks the site's consent platform to record a refusal, or deletes the site's cookies.</li>
+              <li>You can withdraw this permission at any time in Settings. Consents already given stay valid until you withdraw them on each site, which Settings helps you do.</li>
+            </ul>
+          </section>
+          <section>
+            <h2>What Katla collects</h2>
+            <p>
+              Nothing. AutoConsent has no servers and no analytics. Your settings, your consent receipt and the log of
+              banners answered for you stay in this browser.
+            </p>
+          </section>
+        </article>
+
+        <form id="consent-form" class="card agree" novalidate>
+          <h2>Your consent to automatic consent</h2>
+          <p class="muted">Tick each statement you agree with. All three are needed to activate AutoConsent.</p>
+          <div id="statements" class="statements"></div>
+
+          <div class="option">
+            <label class="switch-row">
+              <span>
+                <strong>Also answer banners AutoConsent doesn't recognise</strong>
+                <span class="muted block">Experimental. Looks for a cookie notice with an "Accept all" style button. Off unless you turn it on.</span>
+              </span>
+              <span class="switch"><input type="checkbox" id="generic" role="switch" /><span></span></span>
+            </label>
+          </div>
+
+          <p id="permission-error" class="notice danger" role="alert" hidden>
+            AutoConsent needs access to websites to answer their cookie banners. Please allow it when your browser asks.
+          </p>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary" id="activate" disabled>Activate AutoConsent</button>
+            <button type="button" class="btn" id="not-now">Not now</button>
+          </div>
+          <p class="fineprint muted">
+            Recorded with the date, time and exact wording above as your consent receipt, stored only in this browser.
+            <a href="../options/options.html#privacy" target="_blank">Privacy and legal information</a>
+          </p>
+        </form>
+      </section>
+
+      <section id="done-step" class="card done" hidden>
+        <div class="done-icon" aria-hidden="true">✓</div>
+        <h1>AutoConsent is active</h1>
+        <p class="lede">From now on, Katla answers cookie banners for you.</p>
+        <dl class="receipt">
+          <div><dt>Receipt</dt><dd id="receipt-id"></dd></div>
+          <div><dt>Recorded</dt><dd id="receipt-date"></dd></div>
+        </dl>
+        <p class="muted">
+          Pin AutoConsent to your toolbar to see when it has answered a banner, pause it, or withdraw consent on a
+          website. Your receipt and a log of every banner answered are in Settings.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="../options/options.html">Open settings</a>
+          <button type="button" class="btn" id="close">Close</button>
+        </div>
+      </section>
+    </main>
+    <script src="../content/rules.js"></script>
+    <script type="module" src="onboarding.js"></script>
+  </body>
+</html>

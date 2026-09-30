@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Katla AutoConsent</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M30.769 9.846A16 16 0 1 1 22.154 1.231A8.615 8.615 0 0 0 30.769 9.846Z" fill="currentColor" />
+        </svg>
+        <div>AutoConsent <small>by Katla</small></div>
+      </div>
+      <span id="status" class="status-pill"></span>
+    </header>
+
+    <section id="inactive" class="panel" hidden>
+      <p><strong>AutoConsent isn't active.</strong></p>
+      <p class="muted">It won't answer any cookie banners until you've read what it does and given your consent.</p>
+      <button type="button" class="btn btn-primary wide" id="activate">Review and activate</button>
+    </section>
+
+    <section id="active" hidden>
+      <div class="panel">
+        <label class="switch-row">
+          <span>
+            <strong>Answer cookie banners</strong>
+            <span class="muted sub" id="enabled-hint"></span>
+          </span>
+          <span class="switch"><input type="checkbox" id="enabled" role="switch" /><span></span></span>
+        </label>
+      </div>
+
+      <div class="panel site" id="site">
+        <p class="site-host" id="site-host"></p>
+        <p class="site-state" id="site-state"></p>
+
+        <div id="site-controls">
+          <label class="switch-row site-toggle">
+            <span>Answer banners on this site</span>
+            <span class="switch"><input type="checkbox" id="site-enabled" role="switch" /><span></span></span>
+          </label>
+
+          <div class="site-actions" id="site-actions">
+            <button type="button" class="btn wide" data-confirm="withdraw">Withdraw consent on this site</button>
+            <button type="button" class="btn wide btn-danger" data-confirm="clear">Delete this site's cookies</button>
+          </div>
+
+          <div class="confirm" id="confirm-withdraw" hidden>
+            <p>
+              AutoConsent asks this site's consent platform to record a refusal, stops answering banners here, and
+              reloads the page.
+            </p>
+            <div class="row">
+              <button type="button" class="btn btn-primary" id="withdraw">Withdraw consent</button>
+              <button type="button" class="btn" data-cancel>Cancel</button>
+            </div>
+          </div>
+
+          <div class="confirm" id="confirm-clear" hidden>
+            <p>
+              Deletes cookies and stored data for <strong class="host-inline"></strong>, stops answering banners here,
+              and reloads the page. You'll be signed out of this site.
+            </p>
+            <div class="row">
+              <button type="button" class="btn btn-danger" id="clear">Delete cookies</button>
+              <button type="button" class="btn" data-cancel>Cancel</button>
+            </div>
+          </div>
+
+          <p class="notice" id="site-result" role="status" hidden></p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bottom">
+      <button type="button" class="btn-link" id="open-settings">Settings and activity</button>
+      <button type="button" class="btn-link" id="open-privacy">Privacy</button>
+    </footer>
+
+    <script src="../content/rules.js"></script>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

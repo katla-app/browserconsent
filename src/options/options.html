@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Katla AutoConsent settings</title>
+    <link rel="icon" href="../icons/icon-32.png" />
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="head">
+        <div class="brand">
+          <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M30.769 9.846A16 16 0 1 1 22.154 1.231A8.615 8.615 0 0 0 30.769 9.846Z" fill="currentColor" />
+          </svg>
+          <div>AutoConsent <small>by Katla</small></div>
+        </div>
+        <span id="status" class="status-pill"></span>
+      </header>
+
+      <section class="card block" aria-labelledby="consent-title">
+        <div class="block-head">
+          <h2 id="consent-title">Your consent</h2>
+          <button type="button" class="btn" id="export-receipt" hidden>Export receipt</button>
+        </div>
+
+        <div id="consent-none" hidden>
+          <p>You haven't given AutoConsent permission to answer cookie banners, so it isn't doing anything.</p>
+          <a class="btn btn-primary" href="../onboarding/onboarding.html">Review and activate</a>
+        </div>
+
+        <div id="consent-details" hidden>
+          <p id="consent-summary"></p>
+          <dl class="facts">
+            <div><dt>Receipt</dt><dd id="receipt-id" class="mono"></dd></div>
+            <div><dt>Given</dt><dd id="receipt-granted"></dd></div>
+            <div id="receipt-withdrawn-row" hidden><dt>Withdrawn</dt><dd id="receipt-withdrawn"></dd></div>
+            <div><dt>Wording</dt><dd><span class="mono" id="receipt-version"></span> <span class="muted mono small" id="receipt-hash"></span></dd></div>
+          </dl>
+          <details>
+            <summary>What you agreed to</summary>
+            <ul id="receipt-statements" class="statements"></ul>
+            <p class="muted small" id="receipt-notice"></p>
+          </details>
+          <details>
+            <summary>History</summary>
+            <ol id="consent-history" class="history"></ol>
+          </details>
+
+          <div class="actions" id="withdraw-actions">
+            <button type="button" class="btn btn-danger" id="withdraw-start">Withdraw consent</button>
+          </div>
+          <div class="confirm" id="withdraw-confirm" hidden>
+            <p>
+              AutoConsent will stop answering cookie banners straight away. Consents it already gave stay in place on
+              those websites until you withdraw them there or delete their cookies, which you can do below.
+            </p>
+            <div class="actions">
+              <button type="button" class="btn btn-danger" id="withdraw">Withdraw consent</button>
+              <button type="button" class="btn" id="withdraw-cancel">Cancel</button>
+            </div>
+          </div>
+          <div class="actions" id="regrant" hidden>
+            <a class="btn btn-primary" href="../onboarding/onboarding.html">Give consent again</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="card block" id="settings-block" aria-labelledby="settings-title">
+        <h2 id="settings-title">Settings</h2>
+        <label class="switch-row">
+          <span>
+            <strong>Answer cookie banners</strong>
+            <span class="muted sub">Turn off to pause AutoConsent everywhere without withdrawing your consent.</span>
+          </span>
+          <span class="switch"><input type="checkbox" id="enabled" role="switch" /><span></span></span>
+        </label>
+        <label class="switch-row">
+          <span>
+            <strong>Also answer banners AutoConsent doesn't recognise</strong>
+            <span class="muted sub">Experimental. Clicks an "Accept all" style button in a cookie notice. Changing this is recorded in your consent history.</span>
+          </span>
+          <span class="switch"><input type="checkbox" id="generic" role="switch" /><span></span></span>
+        </label>
+      </section>
+
+      <section class="card block" aria-labelledby="exceptions-title">
+        <h2 id="exceptions-title">Sites where AutoConsent is off</h2>
+        <form id="exception-form" class="inline-form">
+          <label class="visually-hidden" for="exception-input">Website</label>
+          <input id="exception-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false" />
+          <button type="submit" class="btn">Add</button>
+        </form>
+        <ul id="exceptions" class="chips"></ul>
+        <p id="exceptions-empty" class="muted">None. AutoConsent answers banners on every website.</p>
+      </section>
+
+      <section class="card block" aria-labelledby="activity-title">
+        <div class="block-head">
+          <h2 id="activity-title">Activity</h2>
+          <div class="row">
+            <button type="button" class="btn" id="export-log">Export</button>
+            <button type="button" class="btn" id="clear-log">Clear</button>
+          </div>
+        </div>
+        <p class="muted">Every banner AutoConsent answered for you, and every consent you withdrew. Kept in this browser only (last 500 entries).</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">When</th><th scope="col">Website</th><th scope="col">What happened</th></tr>
+            </thead>
+            <tbody id="log"></tbody>
+          </table>
+        </div>
+        <p id="log-empty" class="muted">Nothing yet.</p>
+
+        <div class="notice sites-reset" id="sites-reset" hidden>
+          <p><strong id="sites-count"></strong></p>
+          <p class="muted">Deleting their cookies and stored data resets the consent AutoConsent gave, and those sites will ask you again. You'll be signed out of them.</p>
+          <div class="actions">
+            <button type="button" class="btn btn-danger" id="clear-sites">Delete cookies on these sites</button>
+          </div>
+          <p id="clear-sites-result" role="status" hidden></p>
+        </div>
+      </section>
+
+      <section class="card block" aria-labelledby="platforms-title">
+        <h2 id="platforms-title">Recognised consent platforms</h2>
+        <ul id="platforms" class="chips plain"></ul>
+      </section>
+
+      <section class="card block prose" id="privacy" aria-labelledby="privacy-title">
+        <h2 id="privacy-title">Privacy and legal information</h2>
+        <h3>Data</h3>
+        <p>
+          AutoConsent does not collect, send or sell any data. It has no servers, no analytics and no remote code. Your
+          consent receipt, settings, excluded sites and activity log are stored in this browser's extension storage and
+          are removed when you uninstall the extension. It reads the web pages you visit only to find and answer cookie
+          banners.
+        </p>
+        <h3>How your consent is handled</h3>
+        <ul>
+          <li>You authorise AutoConsent in advance, by ticking separate, unticked statements after reading what it does. Until then, and whenever you pause or withdraw, it doesn't run on any website.</li>
+          <li>Where a website's consent platform has a JavaScript API, AutoConsent records your choice through it; otherwise it presses the banner's "Accept all" button.</li>
+          <li>The exact wording you agreed to, the time and a fingerprint of the text are kept as your receipt, which you can export.</li>
+          <li>If the wording changes in substance, AutoConsent pauses until you agree again.</li>
+          <li>Banners you've already answered are left alone, and AutoConsent steps aside once you click or type on a page.</li>
+          <li>You can pause it, exclude websites, withdraw consent per website and withdraw your authorisation, each in a couple of clicks.</li>
+        </ul>
+        <h3>Please note</h3>
+        <p>
+          AutoConsent answers cookie banners on your behalf. Websites stay responsible for asking for consent correctly
+          and for how they use your data. Rules on whether consent can be given in advance through a tool like this
+          differ between countries, so a website may ask you again or rely on its own records.
+        </p>
+      </section>
+    </main>
+    <script src="../content/rules.js"></script>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

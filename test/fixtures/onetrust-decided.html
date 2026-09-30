@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>OneTrust decided fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>OneTrust, decision already made</h1>
+<div id="onetrust-consent-sdk">
+  <div id="onetrust-banner-sdk" class="banner" style="display:none">
+    <button id="onetrust-accept-btn-handler">Accept all cookies</button>
+  </div>
+</div>
+<script>
+  document.getElementById('onetrust-accept-btn-handler').onclick = () => record('onetrust:click');
+  window.OneTrust = { AllowAll() { record('onetrust:api'); }, IsAlertBoxClosed: () => true };
+</script>

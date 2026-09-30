@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><title>Sourcepoint fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Sourcepoint (cross-origin consent iframe)</h1>
+<script>
+  const frame = document.createElement('iframe');
+  frame.id = 'sp_message_iframe_123';
+  frame.style.cssText = 'position:fixed;inset:10% 10%;width:80%;height:60%;border:0;background:#fff';
+  frame.src = `http://${location.hostname === '127.0.0.1' ? 'localhost' : '127.0.0.1'}:${Number(location.port) + 1}/sp-message.html`;
+  document.body.append(frame);
+  addEventListener('message', (event) => {
+    if (event.data === 'sp:accept') { record('sourcepoint:click'); frame.remove(); }
+    if (event.data === 'sp:reject') record('sourcepoint:reject');
+  });
+</script>

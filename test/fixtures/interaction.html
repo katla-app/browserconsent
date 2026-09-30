@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><title>User interaction fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Banner (no API) appears after 2.5 s; the test clicks the page before that</h1>
+<input id="search" placeholder="Search">
+<script>
+  setTimeout(() => {
+    document.body.insertAdjacentHTML('beforeend', '<div id="onetrust-consent-sdk"><div id="onetrust-banner-sdk" class="banner">Cookies <button id="onetrust-accept-btn-handler">Accept all</button></div></div>');
+    document.getElementById('onetrust-accept-btn-handler').onclick = () => { record('onetrust:click'); hide('#onetrust-banner-sdk'); };
+  }, 2500);
+</script>

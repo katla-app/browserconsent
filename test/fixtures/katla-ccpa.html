@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>Katla CCPA fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Katla widget, CCPA layout: the primary button is "Do Not Sell" and must never be clicked</h1>
+<div id="katla-widget-root"><div>
+  <div class="katla-widget katla-position-bottom-right katla-layout-box" style="position:fixed;bottom:20px;right:20px">
+    <div class="katla-consent-box" style="background:#fff;padding:20px;border:1px solid #ddd">
+      <div class="katla-consent-header"><h2 class="katla-consent-title">Your privacy choices</h2></div>
+      <div class="katla-consent-actions">
+        <button class="katla-btn katla-btn-outline">Cookie Preferences</button>
+        <button class="katla-btn katla-btn-outline">Close</button>
+        <button class="katla-btn katla-btn-primary">Do Not Sell or Share My Personal Information</button>
+      </div>
+    </div>
+  </div>
+</div></div>
+<script>
+  let consent = null;
+  document.querySelector('.katla-btn-primary').onclick = () => record('katla:opt-out');
+  window.KatlaConsent = {
+    hasConsent: () => consent !== null,
+    acceptAll() { record('katla:api'); consent = 'all'; },
+    withdrawConsent() { record('katla:withdraw'); },
+    getRegulation: () => 'ccpa',
+  };
+</script>

@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>Usercentrics API fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Usercentrics v2 (closed shadow root, API initialises after 800 ms)</h1>
+<div id="usercentrics-root"></div>
+<script>
+  const root = document.getElementById('usercentrics-root').attachShadow({ mode: 'closed' });
+  root.innerHTML = '<div class="banner" style="position:fixed;bottom:0;left:0;right:0;padding:24px;background:#fff">Privacy settings <button data-testid="uc-deny-all-button">Deny</button><button data-testid="uc-accept-all-button">Accept all</button></div>';
+  let initialised = false, required = true;
+  setTimeout(() => (initialised = true), 800);
+  window.UC_UI = {
+    isInitialized: () => initialised,
+    isConsentRequired: () => required,
+    acceptAllConsents: async () => { record('usercentrics:api'); required = false; },
+    closeCMP: async () => root.querySelector('.banner').remove(),
+    denyAllConsents: async () => record('usercentrics:withdraw'),
+  };
+</script>

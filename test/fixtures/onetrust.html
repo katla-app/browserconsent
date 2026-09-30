@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>OneTrust fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>OneTrust</h1>
+<div id="onetrust-consent-sdk">
+  <div id="onetrust-banner-sdk" class="banner">
+    We use cookies to improve your experience.
+    <button id="onetrust-pc-btn-handler">Cookie settings</button>
+    <button id="onetrust-reject-all-handler">Reject all</button>
+    <button id="onetrust-accept-btn-handler">Accept all cookies</button>
+  </div>
+</div>
+<script>
+  document.getElementById('onetrust-accept-btn-handler').onclick = () => { record('onetrust:click'); hide('#onetrust-banner-sdk'); };
+  document.getElementById('onetrust-reject-all-handler').onclick = () => { record('onetrust:reject'); hide('#onetrust-banner-sdk'); };
+  let closed = false;
+  window.OneTrust = {
+    AllowAll() { record('onetrust:api'); closed = true; hide('#onetrust-banner-sdk'); },
+    RejectAll() { record('onetrust:withdraw'); },
+    IsAlertBoxClosed: () => closed,
+  };
+</script>

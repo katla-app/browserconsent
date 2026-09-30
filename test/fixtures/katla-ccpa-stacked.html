@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>Katla redesigned CCPA fixture</title><link rel="stylesheet" href="style.css"><script src="harness.js"></script>
+<h1>Katla widget, redesigned CCPA layout: "Do Not Sell" and "Close" are stacked, and both refuse</h1>
+<div id="katla-widget-root"><div>
+  <div class="katla-widget katla-position-bottom-right katla-layout-box" style="position:fixed;bottom:20px;right:20px">
+    <div class="katla-consent-box" style="background:#fff;padding:20px;border:1px solid #ddd">
+      <div class="katla-consent-main"><h2 class="katla-consent-title">Your privacy choices</h2></div>
+      <div class="katla-consent-choices">
+        <div class="katla-consent-actions katla-actions-stack">
+          <button type="button" class="katla-btn katla-btn-primary">Do Not Sell or Share My Personal Information</button>
+          <button type="button" class="katla-btn katla-btn-secondary">Close</button>
+        </div>
+        <button type="button" class="katla-btn-ghost">Cookie Preferences</button>
+      </div>
+    </div>
+  </div>
+</div></div>
+<script>
+  let consent = null;
+  const widget = document.querySelector('.katla-widget');
+  document.querySelector('.katla-btn-primary').onclick = () => record('katla:opt-out');
+  document.querySelector('.katla-btn-secondary').onclick = () => record('katla:close-refuses');
+  window.KatlaConsent = {
+    hasConsent: () => consent !== null,
+    // Like the updated widget, a choice made through the API closes the banner itself.
+    acceptAll() { record('katla:api'); consent = 'all'; widget.classList.add('katla-hidden'); },
+    withdrawConsent() { record('katla:withdraw'); },
+    getRegulation: () => 'ccpa',
+  };
+</script>
