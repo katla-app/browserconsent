@@ -4,6 +4,15 @@
 
 A Manifest V3 browser extension for **Chrome** (and other Chromium browsers) and **Firefox**. After the user gives informed consent once, it answers cookie banners on their behalf with "Reject all" or "Accept all", whichever they chose. It keeps a receipt and an activity log, makes withdrawal easy, and can warn when a site uses common trackers before consent or after a refusal.
 
+## Install
+
+BrowserConsent is waiting for approval in the Chrome Web Store. Until then, install it from the [latest release](https://github.com/katla-app/browserconsent/releases/latest):
+
+- **Chrome** (and Edge, Brave and other Chromium browsers): download `katla-browserconsent-chrome-<version>.zip` and unzip it into its own folder. Open `chrome://extensions`, turn on *Developer mode*, click *Load unpacked* and pick that folder. Chrome loads the extension from the folder, so keep it where it is.
+- **Firefox:** download `katla-browserconsent-firefox-<version>.zip`, open `about:debugging#/runtime/this-firefox`, click *Load Temporary Add-on* and pick the zip. Firefox only keeps an unsigned add-on until it restarts.
+
+A copy installed this way doesn't update itself. Once the store listing is live, remove it and install from the store. Chrome treats the two as different extensions, so settings and the receipt don't carry over.
+
 ## What's in the box
 
 - **Reject all or Accept all.** The user picks during onboarding and can switch in Settings or the popup, or turn automatic consent off and keep only tracker warnings. Accept all needs its own consent statements in the receipt; switching is written into the receipt and its history. Banners without a first-layer reject control (and no platform API) are left for the user rather than walked through their settings screens.
@@ -120,7 +129,8 @@ Add a rule to `src/content/rules.js` with its `accept` and first-layer `reject` 
 1. Bump `version` in `package.json`. If the notice or statements change in substance, also bump `POLICY_VERSION` in `src/lib/constants.js`, which asks every user to consent again.
 2. `npm run build && npm run lint:firefox && npm test && node test/e2e.mjs --firefox`
 3. If the UI changed, `npm run store-assets` to refresh the store images. The listing text and privacy answers are in `store/chrome/listing.md`.
-4. Upload `dist/katla-browserconsent-chrome-<version>.zip` to the Chrome Web Store and `dist/katla-browserconsent-firefox-<version>.zip` to addons.mozilla.org. Use `PRIVACY.md` as the privacy policy. The code is unminified, so AMO needs no separate source upload.
+4. Tag the commit: `git tag v<version> && git push origin v<version>`. The Release workflow (`.github/workflows/release.yml`) builds both zips and attaches them to a GitHub release. The tag has to match `version` in `package.json`. Running the workflow by hand from the Actions tab tags the commit it runs on instead.
+5. Upload `dist/katla-browserconsent-chrome-<version>.zip` to the Chrome Web Store and `dist/katla-browserconsent-firefox-<version>.zip` to addons.mozilla.org. Use `PRIVACY.md` as the privacy policy. The code is unminified, so AMO needs no separate source upload.
 
 ## License
 
