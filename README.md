@@ -1,136 +1,131 @@
-# Katla BrowserConsent - Automatic Cookie Consent
+<p align="center">
+  <a href="https://katla.app">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/logo/katla-logo-dark.svg">
+      <img src="assets/logo/katla-logo.svg" alt="Katla" height="48">
+    </picture>
+  </a>
+</p>
 
-**BrowserConsent by Katla.** Set your privacy preferences once. Katla handles cookie banners for you.
+<h1 align="center">BrowserConsent</h1>
 
-A Manifest V3 browser extension for **Chrome** (and other Chromium browsers) and **Firefox**. After the user gives informed consent once, it answers cookie banners on their behalf with "Reject all" or "Accept all", whichever they chose. It keeps a receipt and an activity log, makes withdrawal easy, and can warn when a site uses common trackers before consent or after a refusal.
+<p align="center">
+  <strong>Set your privacy preferences once. Katla handles cookie banners for you.</strong>
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#how-to-use-it">How to use it</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="#about-katla">About Katla</a>
+</p>
+
+BrowserConsent is an open source browser extension for Chrome and Firefox, made by [Katla](https://katla.app). Tell it once how you want cookie banners answered, **Reject all** or **Accept all**, and it gives every website that answer for you. It also shows you which sites track you anyway.
+
+![The BrowserConsent popup on a news site, showing that all cookies were rejected through OneTrust](store/chrome/screenshot-1-answers.png)
+
+## What it does
+
+- **Answers cookie banners for you.** Pick Reject all or Accept all once, and BrowserConsent gives every site that answer.
+- **Knows the banners you actually meet.** It recognises [39 consent platforms](#supported-consent-platforms), among them OneTrust, Cookiebot, Usercentrics, Didomi, Sourcepoint and TrustArc.
+- **Warns you about trackers.** The toolbar badge turns red when a site sets a tracking cookie or sends a pixel before you've answered its banner, or after you said no. It knows 34 common trackers, such as Google Analytics, Meta Pixel and TikTok.
+- **Blocks them, if you want.** Switch on blocking and those trackers are stopped on every site that doesn't have your consent.
+- **Keeps a record.** You get a receipt of exactly what you agreed to and a log of every banner answered for you. Export them or withdraw at any time.
+- **Collects nothing.** No servers, no analytics, no remote code. Everything stays in your browser.
+
+<table>
+  <tr>
+    <td width="50%"><img src="store/chrome/screenshot-2-tracker-warnings.png" alt="The popup listing trackers a shop used before consent and after a refusal"></td>
+    <td width="50%"><img src="store/chrome/screenshot-3-blocking.png" alt="The popup listing trackers blocked on a site without consent"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="store/chrome/screenshot-4-your-consent.png" alt="The welcome page, where you choose Reject all or Accept all and tick each statement"></td>
+    <td width="50%"><img src="store/chrome/screenshot-5-receipt-and-activity.png" alt="Settings, with the consent receipt and the activity log"></td>
+  </tr>
+</table>
 
 ## Install
 
-BrowserConsent is waiting for approval in the Chrome Web Store. Until then, install it from the [latest release](https://github.com/katla-app/browserconsent/releases/latest):
+BrowserConsent is waiting for approval in the Chrome Web Store. Until then you can install it by hand from the [latest release](https://github.com/katla-app/browserconsent/releases/latest). It needs Chrome 111 or Firefox 140, or newer.
 
-- **Chrome** (and Edge, Brave and other Chromium browsers): download `katla-browserconsent-chrome-<version>.zip` and unzip it into its own folder. Open `chrome://extensions`, turn on *Developer mode*, click *Load unpacked* and pick that folder. Chrome loads the extension from the folder, so keep it where it is.
-- **Firefox:** download `katla-browserconsent-firefox-<version>.zip`, open `about:debugging#/runtime/this-firefox`, click *Load Temporary Add-on* and pick the zip. Firefox only keeps an unsigned add-on until it restarts.
+### Chrome, Edge, Brave and other Chromium browsers
 
-A copy installed this way doesn't update itself. Once the store listing is live, remove it and install from the store. Chrome treats the two as different extensions, so settings and the receipt don't carry over.
+1. Download `katla-browserconsent-chrome-<version>.zip` from the [latest release](https://github.com/katla-app/browserconsent/releases/latest).
+2. Unzip it into its own folder, somewhere you'll keep it. Chrome loads the extension from that folder, so don't move or delete it afterwards.
+3. Open `chrome://extensions` and turn on **Developer mode**.
+4. Click **Load unpacked** and pick the folder.
 
-## What's in the box
+### Firefox
 
-- **Reject all or Accept all.** The user picks during onboarding and can switch in Settings or the popup, or turn automatic consent off and keep only tracker warnings. Accept all needs its own consent statements in the receipt; switching is written into the receipt and its history. Banners without a first-layer reject control (and no platform API) are left for the user rather than walked through their settings screens.
-- **Tracker warnings** (on by default): a list of 34 common trackers (`src/lib/trackers.js`: Google Analytics and Ads, Meta, TikTok, LinkedIn, Microsoft, Hotjar, Pinterest, Snap, X, Adobe, Criteo and others) with their cookie names and pixel endpoints. When a known tracking cookie is set or a pixel is sent *before consent* (while the site's banner is still waiting for an answer) or *after a refusal* (on the page, or on a later visit to a site that was told no), the toolbar badge turns red with the number of trackers, and the popup lists them. Each warning type has its own switch.
-- **Blocking** (opt-in): with "Block them" on, those trackers' pixels are blocked and their cookies deleted on every site that doesn't have the user's consent, before its banner is answered and after a refusal. A site gets them back once it has "Accept all" or a custom choice on file, or when BrowserConsent is off for it. The badge turns green with the number of cookies and pixel endpoints blocked on the page.
-- **40 consent platforms (41 rules)**, starting with Katla (the hosted widget in GDPR and CCPA layouts, and sites built with the SDK, recognised by its guard script and consent cookie since they render their own banner), OneTrust, Cookiebot, Usercentrics (v2/v3, including closed shadow roots), Didomi, Sourcepoint (cross-origin iframe), TrustArc, InMobi Choice (Quantcast), Google Funding Choices, Complianz, CookieYes, Osano, Klaro, iubenda, Termly, Borlabs, CookieFirst, consentmanager.net, Axeptio, Cookie Information, CookieHub, Civic Cookie Control, Tealium, Piwik PRO, Crownpeak/Evidon, CookieScript, Moove GDPR, Cookie Notice, CookieConsent v2 (also built into Quickbutik shops) and v3, Secure Privacy (its banner is a srcdoc iframe), Cookie Tractor, HubSpot, Shopify, Wix, Ezoic, Amazon, Meta and Google. Full list: `src/content/rules.js`.
-- **Platform JavaScript APIs first, clicking as the fallback.** The choice is recorded through the platform's own API wherever one exists (`src/lib/platforms.js`), for example `KatlaConsent.acceptAll()` / `rejectAll()` (`optOutOfSale()` under CCPA), `OneTrust.AllowAll()` / `RejectAll()`, `Cookiebot.submitCustomConsent()`, `Didomi.setUserAgreeToAll()` / `setUserDisagreeToAll()`, `CookieInformation.submitAllCategories()`, `CookieFirst.acceptAllCategories()`, `_iub.cs.api.acceptAll()`, `cookiehub.allowAll()`, `cmplz_accept_all()` and `UC_UI.acceptAllConsents()`. API names were checked against the live scripts on each vendor's own site where possible. Platforms without an accept API (Sourcepoint, TrustArc, Osano, InMobi, Google and others) are clicked.
-- **Decision on file.** Once a site has an answer its banner doesn't come back, so the popup reads the consent platform's own cookie (Katla, OneTrust, Cookiebot, Complianz, CookieYes, CookieFirst, Cookie Information, CookieConsent) and shows whether the site already has cookies accepted, rejected or a custom choice.
-- **Katla debug log** (for developers, off by default). On sites that use Katla it logs how Katla is set up (hosted widget or SDK guard, site ID, version, regulation, GPC), the consent on file, every consent change and what BrowserConsent did, in the page's console, in Katla's own console style. Katla's own debug output is a build-time SDK option (`<KatlaProvider debug>`), so it can't be switched on from outside.
-- **Optional heuristic** for unrecognised banners. It matches exact "Accept all" and "Reject all" labels in 12 languages, including Swedish, German, French, Spanish, Italian, Dutch, the Nordic languages and Polish. Off by default.
-- **Consent to automatic consent.** Nothing is injected into any website until the user has read what BrowserConsent does and ticked separate, unticked statements. The content script is registered only while that consent is valid, and removed on withdrawal or pause. The user gets a verbatim receipt with a SHA-256 fingerprint and must agree again when the wording changes. See [LEGAL.md](LEGAL.md).
-- **Withdrawal**: globally, per site through the site's consent platform, or by deleting a site's cookies. Settings can reset every site where consent was given.
-- **No data collection.** See [PRIVACY.md](PRIVACY.md).
+1. Download `katla-browserconsent-firefox-<version>.zip` from the [latest release](https://github.com/katla-app/browserconsent/releases/latest).
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on** and pick the zip.
 
-## Build
+Firefox only keeps an unsigned add-on until it restarts, so you'll need to load it again next time.
+
+### Updates
+
+A copy installed by hand doesn't update itself. To update in Chrome, replace the folder's contents with the new release and click the reload button on BrowserConsent's card in `chrome://extensions`.
+
+Once the store listing is live, remove this copy and install from the store. Chrome treats the two as different extensions, so your settings and receipt don't carry over.
+
+## How to use it
+
+1. **Read and agree.** A welcome page opens after you install. It explains what BrowserConsent does and what it means for your privacy. Choose Reject all or Accept all, tick each statement, and click **Activate BrowserConsent**. Until you do, it doesn't run on any website.
+2. **Browse as usual.** When a site shows a cookie banner, BrowserConsent answers it the way you chose.
+3. **Look at the toolbar button.** The badge tells you what happened on the page you're on:
+
+   | Badge | What it means |
+   | --- | --- |
+   | A tick | The site's cookie banner was answered |
+   | A red number | That many trackers were used before consent, or after a refusal |
+   | A green number | That many tracking cookies and pixels were blocked |
+
+4. **Click it for more.** The popup shows what was answered and which trackers were flagged. From there you can switch between Reject all and Accept all, turn BrowserConsent off for the site, withdraw your consent on it, or delete its cookies.
+5. **Change anything in Settings.** Open **Settings and activity** from the popup to turn tracker warnings and blocking on or off, list sites where BrowserConsent should stay off, and see your receipt and activity log.
+
+A few things that are useful to know:
+
+- **Your own click always wins.** Banners you've already answered are left alone, and BrowserConsent steps aside as soon as you click or type on a page.
+- **No way to reject on the first screen? It's left for you.** BrowserConsent doesn't click through a banner's settings screens to find one.
+- **Accept all is a real consent.** Websites and their partners may then use cookies for analytics, personalisation and advertising under their own privacy policies, so BrowserConsent asks you to agree to that separately.
+- **Blocking is off until you turn it on.** Some sites may not work fully with it on.
+- **Banners it doesn't recognise are left alone.** There's an experimental option in Settings to answer those too, by their "Reject all" or "Accept all" button, in 12 languages.
+
+## Supported consent platforms
+
+Katla, OneTrust, Cookiebot, Usercentrics, Didomi, InMobi Choice (Quantcast), Sourcepoint, TrustArc, Google Funding Choices, Google, Complianz, CookieYes, Osano, Klaro, iubenda, Termly, Borlabs Cookie, CookieFirst, consentmanager.net, Axeptio, Cookie Information, CookieHub, Civic Cookie Control, Tealium, Piwik PRO, Crownpeak (Evidon), CookieScript, GDPR Cookie Compliance (Moove), Cookie Notice & Compliance, Secure Privacy, Cookie Tractor, CookieConsent, Cookie Consent (Insites), HubSpot, Shopify, Wix, Ezoic, Amazon and Meta (Facebook, Instagram).
+
+Where a platform has its own JavaScript API, BrowserConsent records your choice through it, so the site's consent record is updated the way the platform intends. Otherwise it presses the banner's matching button.
+
+Met a banner it doesn't answer? [Open an issue](https://github.com/katla-app/browserconsent/issues) with the site's address.
+
+## Privacy
+
+Katla collects nothing. BrowserConsent has no servers, no analytics and no remote code. Your settings, receipt and activity log stay in your browser, and uninstalling removes them.
+
+- [PRIVACY.md](PRIVACY.md): what's stored on your device, and what each browser permission is used for.
+- [LEGAL.md](LEGAL.md): how BrowserConsent is built so that the consent it gives is really yours.
+
+## For developers
 
 ```bash
 npm install
-npm run build          # dist/chrome, dist/firefox and a store-ready zip for each
-npm run lint:firefox   # Mozilla's add-on linter
-npm run icons          # regenerate PNG icons from the official Katla mark in assets/logo (no dependencies)
-npm run store-assets   # Chrome Web Store icon and 1280x800 screenshots in store/chrome, from real captures
+npm run build   # dist/chrome and dist/firefox, and a zip of each
+npm test        # end-to-end tests in a real browser
 ```
 
-Load for development:
+Load `dist/chrome` with *Load unpacked* in `chrome://extensions`, or `dist/firefox/manifest.json` with *Load Temporary Add-on* in `about:debugging#/runtime/this-firefox`.
 
-- **Chrome:** `chrome://extensions` → Developer mode → *Load unpacked* → `dist/chrome`
-- **Firefox:** `about:debugging#/runtime/this-firefox` → *Load Temporary Add-on* → `dist/firefox/manifest.json`
+[DEVELOPMENT.md](DEVELOPMENT.md) has the rest: how it works, how to set up browsers for the tests, how to add a consent platform or a tracker, and how to release.
 
-Minimum versions: Chrome 111, Firefox 140 (desktop) and Firefox for Android 142. Both are needed for `world: "MAIN"` content scripts and Firefox's data collection declaration.
+## About Katla
 
-## Test
+[Katla](https://katla.app) is a cookie consent platform for websites. It scans your site, finds and classifies the cookies it sets, and gives you a consent banner that stays up to date with them, as a hosted widget or an SDK, for GDPR and CCPA.
 
-```bash
-npm test                          # builds, then runs the e2e suite in Chrome
-node test/e2e.mjs --firefox       # the same suite in Firefox
-node test/e2e.mjs --offline       # skip the live Katla widget test
-```
+BrowserConsent is the visitor's side of that. Sites that use Katla are answered through Katla's own API, and developers of those sites get a debug log in Settings that shows how Katla is set up on the page.
 
-The suite loads the built extension into a real browser and runs it against fixture pages in `test/fixtures/`. It checks:
-
-- nothing is registered or happens before consent, and the onboarding gate works
-- API first and click fallback (closed shadow DOM, delayed banners, cross-origin iframes)
-- the Katla CCPA "Do Not Sell" button is never clicked
-- existing decisions and user interaction are respected
-- pages can't trigger the extension
-- excluded and paused sites, and scripts are unregistered on pause and withdrawal
-- per-site and global withdrawal, and the activity log
-- Katla sites built with the SDK (their own banner markup, answered through the API; a decision on file left alone), and CookieConsent v2 (accepted with its primary button; with Reject all, only answered when its first screen has an "only necessary" button)
-- Secure Privacy through its API, and by clicking inside its srcdoc iframe without one; Cookie Tractor by its buttons, never saving a custom selection
-- blocking: pixels blocked and tracking cookies deleted on a site without consent, a green count, pixels allowed again once the site has consent, and no rules left when it's switched off
-- Reject all through platform APIs (OneTrust, Katla, Katla SDK, Katla CCPA opt-out) and by clicking (Cookiebot, Sourcepoint, unrecognised banners), and that Accept all can't be switched on without its consent statements
-- tracker warnings: nothing recorded while off, trackers before consent and after a refusal (kept when a frame loads later), a later visit judged against the refusal on file, nothing flagged after Accept all, and warnings with automatic consent off following the user's own click
-- the real Katla widget from `dist.katla.app`
-
-Browsers are found through `CHROME_PATH` / `FIREFOX_PATH`, or in `BROWSERS_DIR`, `./.browsers` or `~/.cache/puppeteer`. To download them:
-
-```bash
-npx @puppeteer/browsers install chrome@stable firefox@stable --path .browsers
-```
-
-## How it works
-
-```
-src/
-  background.js          registers the content script only while consent is valid; runs platform APIs;
-                         site checks, badge, onboarding on install, activity log; tracker warnings
-  lib/platforms.js       consent platform JS APIs (accept / reject / withdraw), injected into the page by the background
-  lib/trackers.js        common tracking cookies and pixel endpoints, and their matchers
-  lib/warnings.js        judges tracker hits as before consent / after a refusal (background badge and popup)
-  content/rules.js       platform rules (accept and reject controls) + unrecognised-banner heuristic
-  content/engine.js      finds banners, asks the background to use the platform API, clicks as fallback, reports;
-                         with tracker warnings on, also reports banners and the user's own answers
-  onboarding/            consent flow and receipt
-  popup/                 toolbar: status, pause, per-site off, withdraw, delete cookies
-  options/               receipt, history, settings, excluded sites, activity, privacy
-  lib/                   shared storage, site and constants modules
-scripts/build.mjs        per-browser manifests (service worker vs. background scripts, gecko settings)
-```
-
-Until the user consents, the extension has no content scripts at all. Once consent is recorded, `background.js` registers `rules.js` and `engine.js` for http(s) pages while automatic consent or tracker warnings are on. It unregisters them again when the user withdraws, turns both off, or the consent wording changes. For each page (and each frame), the engine:
-
-1. Watches the DOM for up to 30 seconds (15 in iframes) for a visible first-layer banner from a known platform. Platforms whose banner can't be recognised, like Katla sites built with the SDK, count as asking while their marker (the SDK's guard script) is on the page and their consent cookie isn't set.
-2. Before acting, asks the background whether the top-level site is allowed and how to answer: valid receipt for the current policy version, automatic consent on, not excluded, and the user hasn't interacted. "Accept all" is only ever used when the receipt holds the user's agreement to it.
-3. If the platform has a JavaScript API, asks the background to run it in the page's own JavaScript world (`scripting.executeScript`, re-checking the site first). The API also reports whether a decision already exists, which is then left alone. If the banner stays on screen after the API call, the control for the same answer is pressed to close it.
-4. Otherwise clicks the platform's control for the answer (for "Reject all" without a known selector, a button inside the banner labelled "Reject all" or similar) and checks the banner is gone.
-5. Stops as soon as the user clicks or types on the page, and logs what it did (method `api` or `click`).
-
-### Tracker warnings
-
-With either warning switched on, the background keeps a record per tab in `storage.session` (shape in `src/lib/warnings.js`):
-
-- **Hits.** `webRequest.onBeforeRequest`, filtered to the pixel endpoints in `trackers.js`, catches pixels. `cookies.onChanged` catches tracking cookies being set or refreshed. A cookie is put down to the tabs of the site it belongs to (or, when partitioned, the site it was set under), otherwise to the tab that just sent a request to the tracker host that set it. Google hits whose `gcs` parameter says Consent Mode was denied are labelled as cookieless pings.
-- **Consent state.** The engine reports when a first-layer banner is showing (so no decision exists yet) and, from trusted clicks on known accept/reject controls, the user's own answers. BrowserConsent's answers are recorded with the moment it acted. The last decision per site is remembered (`siteDecisions` in `storage.local`), and once a page has loaded the background reads the decision the site's consent platform has on file from its consent cookie (`src/lib/on-file.js`). A later visit to a site that was told no is judged against that, even when the refusal was given before BrowserConsent was installed, and a decision on file earns the answered tick when the banner doesn't come back.
-- **Judging.** Hits are compared by timestamp against the page's decisions: before any decision, with a banner showing, is *before consent*; after a refusal, or on a later visit to a refused site, is *after a refusal*. The badge shows the number of trackers flagged, in red, over the answered tick.
-- **Remembered per site.** What's flagged is also kept per site (`siteFindings` in `storage.local`, up to 10 cookie and pixel names per tracker), so a later visit, when the banner doesn't come back, still shows it, marked as seen on an earlier visit. Deleting a site's cookies from the popup or Settings forgets it, along with the site's decision.
-
-The two listeners are removed while warnings and blocking are off, so the browser doesn't wake the service worker for every cookie it sets.
-
-### Blocking
-
-With blocking on, `background.js` keeps a set of `declarativeNetRequest` dynamic rules: one block rule per pixel endpoint in `trackers.js`, and a higher-priority allow rule for requests from sites that keep their trackers (`initiatorDomains`: sites with "accept all" or a custom choice in `siteDecisions`, and excluded sites). The rules are rewritten when settings, excluded sites or site decisions change, and removed when blocking is switched off. The decision a site's consent cookie has on file is checked as soon as a page starts loading, so a consent given before BrowserConsent was installed counts from the first request. Cookies can't be stopped before they're set, so a known tracking cookie on a site without consent is deleted as soon as `cookies.onChanged` reports it. Blocked hits are recorded like the others, marked `blocked`, and counted in green instead of red.
-
-### Adding a tracker
-
-Add an entry to `TRACKERS` in `src/lib/trackers.js`: cookie names (with `*` wildcards, and `@domain` for names too generic to recognise alone) and the endpoints its tags send hits to, not the scripts that load them. Keep to trackers whose names and endpoints mean the same thing on every site.
-
-### Adding a platform
-
-Add a rule to `src/content/rules.js` with its `accept` and first-layer `reject` controls, and its consent `cookie` so the popup can show the decision on file (check the cookie's format on a live site after both answers). Target the first-layer banner only, never a settings screen the user opened. If the platform has a JS API, add `api`, `decided`, `accept` and `refuse` handlers (and `withdraw` if it differs from `refuse`) to `platformAction` in `src/lib/platforms.js` and set `api: true` on the rule. The function is serialised into the page, so keep everything inside it. Check the API names on a live site that uses the platform, then add a fixture and a test in `test/`.
-
-## Releasing
-
-1. Bump `version` in `package.json`. If the notice or statements change in substance, also bump `POLICY_VERSION` in `src/lib/constants.js`, which asks every user to consent again.
-2. `npm run build && npm run lint:firefox && npm test && node test/e2e.mjs --firefox`
-3. If the UI changed, `npm run store-assets` to refresh the store images. The listing text and privacy answers are in `store/chrome/listing.md`.
-4. Tag the commit: `git tag v<version> && git push origin v<version>`. The Release workflow (`.github/workflows/release.yml`) builds both zips and attaches them to a GitHub release. The tag has to match `version` in `package.json`. Running the workflow by hand from the Actions tab tags the commit it runs on instead.
-5. Upload `dist/katla-browserconsent-chrome-<version>.zip` to the Chrome Web Store and `dist/katla-browserconsent-firefox-<version>.zip` to addons.mozilla.org. Use `PRIVACY.md` as the privacy policy. The code is unminified, so AMO needs no separate source upload.
+Run a website? Have a look at [katla.app](https://katla.app) or the [docs](https://docs.katla.app).
 
 ## License
 
