@@ -23,13 +23,13 @@ Most websites ask for your cookie consent on your first visit. BrowserConsent gi
 
 HOW IT WORKS
 • Choose Reject all or Accept all once, when you set it up. You can switch in Settings at any time.
-• Works with 39 consent platforms, including Katla, OneTrust, Cookiebot, Usercentrics, Didomi, Sourcepoint, TrustArc, InMobi Choice, Google Funding Choices, Complianz, CookieYes, iubenda and Osano.
+• Recognises the banners of 39 consent platforms. The full list is in Settings.
 • Banners you've already answered are left alone, and BrowserConsent steps aside as soon as you click or type on a page.
 • The toolbar button shows what happened on the site you're on, and whether the site already has a cookie choice on file: accepted, rejected or custom.
 • Switch it off for a site, pause it everywhere, or withdraw your consent on a site, all from the toolbar button.
 
 TRACKER WARNINGS
-BrowserConsent knows 34 common trackers, including Google Analytics and Ads, Meta, TikTok, LinkedIn, Microsoft, Hotjar and Pinterest. When one of them sets a cookie or sends a pixel before you've answered a site's banner, or after you said no, the toolbar badge turns red and the popup lists them. Warnings are on to start with, and you can turn them off.
+BrowserConsent knows 34 common analytics and advertising trackers. When one of them sets a cookie or sends a pixel before you've answered a site's banner, or after you said no, the toolbar badge turns red and the popup lists them. Warnings are on to start with, and you can turn them off.
 
 BLOCKING (OPTIONAL)
 Turn on "Block them" and those trackers' pixels are blocked and their cookies deleted on sites that don't have your consent. A site gets them back once it has your "Accept all" or a custom choice. The badge turns green with the number blocked. Some sites may not work fully with blocking on.

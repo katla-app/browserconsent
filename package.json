@@ -1,7 +1,7 @@
 {
   "name": "katla-browserconsent",
   "displayName": "Katla BrowserConsent - Automatic Cookie Consent",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "BrowserConsent by Katla. Set your privacy preferences once. Katla handles cookie banners for you.",
   "license": "MIT",
   "private": true,
