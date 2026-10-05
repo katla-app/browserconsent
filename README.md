@@ -14,6 +14,7 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/katla-browserconsent-auto/obcgpaekemgfbdninooddanpgkldagkc">Chrome Web Store</a> ·
   <a href="#install">Install</a> ·
   <a href="#how-to-use-it">How to use it</a> ·
   <a href="#privacy">Privacy</a> ·
@@ -46,16 +47,15 @@ BrowserConsent is an open source browser extension for Chrome and Firefox, made 
 
 ## Install
 
-BrowserConsent is waiting for approval in the Chrome Web Store. Until then you can install it by hand from the [latest release](https://github.com/katla-app/browserconsent/releases/latest). It needs Chrome 111 or Firefox 140, or newer.
+BrowserConsent needs Chrome 111 or Firefox 140, or newer.
 
 ### Chrome, Edge, Brave and other Chromium browsers
 
-1. Download `katla-browserconsent-chrome-<version>.zip` from the [latest release](https://github.com/katla-app/browserconsent/releases/latest).
-2. Unzip it into its own folder, somewhere you'll keep it. Chrome loads the extension from that folder, so don't move or delete it afterwards.
-3. Open `chrome://extensions` and turn on **Developer mode**.
-4. Click **Load unpacked** and pick the folder.
+Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/katla-browserconsent-auto/obcgpaekemgfbdninooddanpgkldagkc) and click **Add to Chrome**. The store keeps it up to date for you.
 
 ### Firefox
+
+On Firefox you install it by hand:
 
 1. Download `katla-browserconsent-firefox-<version>.zip` from the [latest release](https://github.com/katla-app/browserconsent/releases/latest).
 2. Open `about:debugging#/runtime/this-firefox`.
@@ -63,11 +63,18 @@ BrowserConsent is waiting for approval in the Chrome Web Store. Until then you c
 
 Firefox only keeps an unsigned add-on until it restarts, so you'll need to load it again next time.
 
-### Updates
+### Chrome, by hand
 
-A copy installed by hand doesn't update itself. To update in Chrome, replace the folder's contents with the new release and click the reload button on BrowserConsent's card in `chrome://extensions`.
+You can also load a release in Chrome yourself instead of using the store:
 
-Once the store listing is live, remove this copy and install from the store. Chrome treats the two as different extensions, so your settings and receipt don't carry over.
+1. Download `katla-browserconsent-chrome-<version>.zip` from the [latest release](https://github.com/katla-app/browserconsent/releases/latest).
+2. Unzip it into its own folder, somewhere you'll keep it. Chrome loads the extension from that folder, so don't move or delete it afterwards.
+3. Open `chrome://extensions` and turn on **Developer mode**.
+4. Click **Load unpacked** and pick the folder.
+
+A copy installed by hand doesn't update itself. To update it, replace the folder's contents with the new release and click the reload button on BrowserConsent's card in `chrome://extensions`.
+
+Chrome treats a copy installed by hand and the one from the store as different extensions, so your settings and receipt don't carry over between them. If you installed by hand before the store listing went live, remove that copy and install from the store.
 
 ## How to use it
 
